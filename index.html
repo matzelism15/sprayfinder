@@ -1,0 +1,2143 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprühfarben-Finder – Entwurf in Dosenfarben übersetzen</title>
+<style>
+  :root{
+    --bg:#0e0f13;
+    --panel:#171922;
+    --panel-2:#1f222e;
+    --line:#2b2f3d;
+    --text:#eef0f6;
+    --muted:#9aa1b4;
+    --accent:#7c5cff;
+    --accent-2:#21d4a8;
+    --danger:#ff5c7c;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 10% -5%, rgba(124,92,255,.12), transparent 60%),
+      radial-gradient(800px 500px at 110% 10%, rgba(33,212,168,.10), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+  header.hero{margin-bottom:22px}
+  .badge{display:inline-flex;gap:8px;align-items:center;font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--accent-2);font-weight:700;margin-bottom:10px}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 12px var(--accent-2)}
+  h1{font-size:clamp(26px,4vw,40px);margin:0 0 8px;font-weight:800;letter-spacing:-.02em}
+  h1 .grad{background:linear-gradient(90deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);max-width:760px;font-size:15px}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .pad{padding:20px}
+  .grid{display:grid;gap:18px}
+  @media(min-width:900px){.cols{grid-template-columns:340px 1fr}}
+
+  /* Upload */
+  .drop{
+    border:2px dashed var(--line);border-radius:var(--radius);
+    padding:30px 18px;text-align:center;cursor:pointer;transition:.18s;
+    background:var(--panel-2);
+  }
+  .drop:hover,.drop.drag{border-color:var(--accent);background:#23263340}
+  .drop .ico{font-size:34px;line-height:1}
+  .drop b{display:block;margin-top:8px}
+  .drop small{color:var(--muted)}
+  input[type=file]{display:none}
+
+  label.ctl{display:block;font-size:13px;color:var(--muted);margin:18px 0 6px;font-weight:600;letter-spacing:.02em}
+  .rangeRow{display:flex;align-items:center;gap:14px}
+  input[type=range]{flex:1;accent-color:var(--accent);height:4px}
+  .pill{min-width:42px;text-align:center;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;padding:6px 8px;font-weight:800;font-variant-numeric:tabular-nums}
+
+  .brands{display:flex;flex-direction:column;gap:8px}
+  .brandChk{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;cursor:pointer;user-select:none;transition:.15s}
+  .brandChk:hover{border-color:#3a3f52}
+  .brandChk input{width:18px;height:18px;accent-color:var(--accent)}
+  .brandChk .nm{font-weight:600;font-size:14px}
+  .brandChk .ct{margin-left:auto;color:var(--muted);font-size:12px}
+
+  button.go{
+    margin-top:18px;width:100%;border:0;border-radius:12px;padding:14px 16px;font-size:15px;font-weight:800;
+    color:#fff;cursor:pointer;background:linear-gradient(90deg,var(--accent),#5a7bff);
+    box-shadow:0 8px 20px rgba(124,92,255,.35);transition:.15s}
+  button.go:hover{filter:brightness(1.08)}
+  button.go:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+
+  .ghost{background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:10px;padding:9px 12px;font-weight:600;cursor:pointer;font-size:13px}
+  .ghost:hover{border-color:var(--accent)}
+
+  /* Results */
+  .previewGrid{display:grid;gap:16px}
+  @media(min-width:680px){.previewGrid{grid-template-columns:1fr 1fr}}
+  .canvasCard h3{margin:0 0 10px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;display:flex;align-items:center;gap:8px}
+  .canvasBox{background:
+      conic-gradient(#1b1d27 25%, #15171f 0 50%, #1b1d27 0 75%, #15171f 0) 0 0/22px 22px;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:140px}
+  canvas{max-width:100%;height:auto;display:block}
+
+  .secTitle{font-size:18px;font-weight:800;margin:26px 0 4px;letter-spacing:-.01em}
+  .secSub{color:var(--muted);font-size:13px;margin:0 0 14px}
+
+  /* distribution bar */
+  .distBar{display:flex;height:34px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+  .distBar span{height:100%;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;overflow:hidden;white-space:nowrap;
+    font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.22)}
+
+  /* color rows */
+  .rows{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+  .row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  @media(max-width:560px){.row{grid-template-columns:auto 1fr;gap:10px}}
+  .swatchPair{display:flex;align-items:center;gap:6px}
+  .sw{width:34px;height:34px;border-radius:9px;border:1px solid #00000055;box-shadow:inset 0 0 0 1px #ffffff14}
+  .arrow{color:var(--muted);font-size:16px}
+  .meta .brand{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-2)}
+  .meta .name{font-weight:700}
+  .meta .code{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+  .pctWrap{min-width:120px}
+  @media(max-width:560px){.pctWrap{grid-column:1 / -1;min-width:0}}
+  .pctTop{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .pctTop b{color:var(--text);font-variant-numeric:tabular-nums}
+  .pctBarBg{height:8px;border-radius:6px;background:#0d0e13;overflow:hidden}
+  .pctBarFg{height:100%;border-radius:6px}
+  .matchTag{font-size:11px;padding:2px 7px;border-radius:20px;font-weight:700;white-space:nowrap}
+  .m-good{background:rgba(33,212,168,.15);color:var(--accent-2)}
+  .m-ok{background:rgba(255,196,84,.15);color:#ffc454}
+  .m-far{background:rgba(255,92,124,.16);color:var(--danger)}
+
+  /* color picker (manuelle Farbwahl) */
+  input[type=color].pick{
+    -webkit-appearance:none;appearance:none;width:34px;height:34px;padding:0;cursor:pointer;
+    border:1px solid #00000055;border-radius:9px;background:none;box-shadow:inset 0 0 0 1px #ffffff22}
+  input[type=color].pick::-webkit-color-swatch-wrapper{padding:0}
+  input[type=color].pick::-webkit-color-swatch{border:none;border-radius:8px}
+  input[type=color].pick::-moz-color-swatch{border:none;border-radius:8px}
+  .resetRow{border:0;background:#2a2e3c;color:var(--muted);width:24px;height:24px;border-radius:50%;
+    cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .resetRow:hover{background:#39405430;color:var(--text);box-shadow:inset 0 0 0 1px var(--accent)}
+  .row.flash{box-shadow:0 0 0 2px var(--accent);transition:box-shadow .2s}
+  #cvPrev{cursor:crosshair}
+  .editHint{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+  .editHint b{color:var(--accent-2)}
+
+  /* Farb-Button in der Liste */
+  .pickBtn{width:34px;height:34px;border-radius:9px;border:1px solid #00000055;cursor:pointer;
+    padding:0;box-shadow:inset 0 0 0 1px #ffffff22}
+  .pickBtn:hover{box-shadow:inset 0 0 0 1px #ffffff22, 0 0 0 2px var(--accent)}
+
+  /* Popup / Modal */
+  .modalOverlay{position:fixed;inset:0;background:rgba(6,7,10,.66);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:18px}
+  .modalCard{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+    box-shadow:var(--shadow);width:min(540px,100%);max-height:86vh;display:flex;flex-direction:column;overflow:hidden}
+  .modalCard h3{margin:0;padding:18px 48px 0 20px;font-size:18px;font-weight:800}
+  .modalClose{position:absolute;top:12px;right:14px;background:none;border:0;color:var(--muted);
+    font-size:26px;line-height:1;cursor:pointer}
+  .modalClose:hover{color:var(--text)}
+  .curRow{display:flex;align-items:center;gap:8px;padding:12px 20px 4px;color:var(--muted);font-size:12.5px;flex-wrap:wrap}
+  .curRow .sw{width:28px;height:28px;border-radius:8px;border:1px solid #00000055}
+  .curRow b{color:var(--text)}
+  .searchRow{display:flex;gap:10px;padding:10px 20px 12px;flex-wrap:wrap}
+  .searchRow input,.searchRow select{flex:1;min-width:150px;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px}
+  .searchRow input:focus,.searchRow select:focus{outline:none;border-color:var(--accent)}
+  .modalListHead{padding:0 20px 8px;font-size:11.5px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.06em;font-weight:700}
+  .canList{overflow-y:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:6px}
+  .canItem{display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:9px 12px;color:var(--text)}
+  .canItem:hover{border-color:var(--accent)}
+  .canItem.sel{border-color:var(--accent-2);box-shadow:inset 0 0 0 1px var(--accent-2)}
+  .canItem .sw{width:30px;height:30px;border-radius:8px;border:1px solid #00000055;flex:0 0 auto}
+  .ci-meta{display:flex;flex-direction:column;flex:1;min-width:0}
+  .ci-meta b{font-size:14px}
+  .ci-meta small{color:var(--muted);font-size:11.5px}
+  .ci-d{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .modalFoot{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
+
+  /* Skalierungs-Button auf der Vorschau */
+  .canvasBox{position:relative}
+  .expandBtn{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:10px;
+    border:1px solid var(--line);background:rgba(20,22,30,.78);backdrop-filter:blur(4px);
+    color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    padding:0;z-index:3;transition:.15s}
+  .expandBtn:hover{background:rgba(30,33,46,.95);box-shadow:0 0 0 2px var(--accent);color:#fff}
+  .expandBtn svg{display:block}
+
+  /* Vollbild-Vorschau */
+  .bigOverlay{position:fixed;inset:0;background:rgba(6,7,10,.9);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:40;padding:24px}
+  .bigCanvasBox{background:conic-gradient(#1b1d27 25%, #15171f 0 50%, #1b1d27 0 75%, #15171f 0) 0 0/22px 22px;
+    border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;max-width:96vw;max-height:84vh}
+  #cvPrevBig{cursor:crosshair;display:block;max-width:96vw;max-height:84vh}
+  .bigClose{position:fixed;top:18px;right:20px;background:rgba(20,22,30,.85);border:1px solid var(--line);
+    color:var(--text);width:42px;height:42px;border-radius:50%;font-size:24px;cursor:pointer;
+    line-height:1;z-index:41;display:flex;align-items:center;justify-content:center}
+  .bigClose:hover{background:rgba(30,33,46,.95);box-shadow:0 0 0 2px var(--accent)}
+  .bigHint{color:var(--muted);font-size:13px;margin:14px 0 0;text-align:center}
+  .bigHint b{color:var(--accent-2)}
+
+  /* Header mit Anzahl der Matches */
+  .bigHeader{color:var(--text);font-weight:700;font-size:13px;letter-spacing:.02em;
+    background:rgba(20,22,30,.85);border:1px solid var(--line);border-radius:999px;
+    padding:8px 16px;margin-bottom:14px;display:inline-flex;align-items:center;gap:8px}
+  .bigHeader b{color:var(--accent-2);font-variant-numeric:tabular-nums;font-size:16px}
+
+  /* Canvas-Wrap + Chip-Overlay */
+  .bigCanvasWrap{position:relative;display:block}
+  .bigCanvasWrap canvas{display:block}
+  .chipsLayer{position:absolute;inset:0;pointer-events:none}
+  .chip{position:absolute;transform:translate(-50%,-50%);border:0;padding:0;line-height:1;
+    border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:11px;font-variant-numeric:tabular-nums;
+    box-shadow:0 2px 10px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.85);
+    cursor:grab;pointer-events:auto;user-select:none;transition:box-shadow .15s, transform .12s}
+  .chip:hover{box-shadow:0 4px 14px rgba(0,0,0,.55), inset 0 0 0 2px rgba(255,255,255,.95), 0 0 0 3px var(--accent-2)}
+  .chip.dragging{cursor:grabbing;transition:none;z-index:5;box-shadow:0 6px 22px rgba(0,0,0,.6), inset 0 0 0 2px #fff, 0 0 0 3px var(--accent)}
+
+  /* shopping list */
+  .shop{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .can{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:12px;padding:8px 12px}
+  .can .sw{width:26px;height:26px;border-radius:7px}
+  .can .t b{font-size:13px}
+  .can .t small{display:block;color:var(--muted);font-size:11px}
+
+  .hint{font-size:12.5px;color:var(--muted);background:#1a1c26;border:1px solid var(--line);
+    border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;margin-top:18px}
+  .empty{color:var(--muted);text-align:center;padding:40px 10px}
+  .hidden{display:none!important}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px}
+  footer{color:var(--muted);font-size:12px;text-align:center;margin-top:40px;line-height:1.7}
+  a{color:var(--accent-2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="badge"><span class="dot"></span> Sprühdosen-Farbmatcher</div>
+    <h1>Vom Entwurf zur <span class="grad">richtigen Dose</span></h1>
+    <p class="sub">Lade ein Foto oder einen Entwurf hoch. Die App erkennt die wichtigsten Farben,
+      schlägt passende Sprühdosen von Montana&nbsp;Cans, Montana&nbsp;Colors&nbsp;(MTN), Molotow&nbsp;Premium und
+      Loop&nbsp;Colors vor, zeigt dir eine Vorschau in echten Dosenfarben und wie viel Prozent jede Farbe einnimmt.</p>
+  </header>
+
+  <div class="grid cols">
+    <!-- LEFT: controls -->
+    <section class="panel pad">
+      <div id="drop" class="drop">
+        <div class="ico">⬆️</div>
+        <b>Bild hochladen</b>
+        <small>Klicken oder per Drag &amp; Drop · JPG, PNG, WEBP</small>
+        <input id="file" type="file" accept="image/*">
+      </div>
+
+      <label class="ctl">Anzahl der Zielfarben</label>
+      <div class="rangeRow">
+        <input id="kRange" type="range" min="2" max="16" value="6">
+        <div id="kVal" class="pill">6</div>
+      </div>
+
+      <label class="ctl">Hersteller / Farblinien</label>
+      <div id="brands" class="brands"></div>
+
+      <button id="run" class="go" disabled>Farben analysieren</button>
+      <div class="toolbar">
+        <button id="reset" class="ghost hidden">Neues Bild</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: results -->
+    <section class="panel pad">
+      <div id="placeholder" class="empty">
+        <div style="font-size:40px">🎨</div>
+        <p>Noch kein Bild geladen.<br>Lade links einen Entwurf hoch und klicke auf <b>„Farben analysieren“</b>.</p>
+      </div>
+
+      <div id="results" class="hidden">
+        <div class="previewGrid">
+          <div class="canvasCard">
+            <h3>Original</h3>
+            <div class="canvasBox"><canvas id="cvOrig"></canvas></div>
+          </div>
+          <div class="canvasCard">
+            <h3>Vorschau in Dosenfarben</h3>
+            <div class="canvasBox">
+              <canvas id="cvPrev"></canvas>
+              <button id="expandBtn" class="expandBtn" title="Vorschau vergrößern"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg></button>
+            </div>
+            <div class="toolbar">
+              <button id="dl" class="ghost">Vorschau speichern (PNG)</button>
+              <button id="resetColors" class="ghost">Alle Farben zurücksetzen</button>
+            </div>
+          </div>
+        </div>
+        <p class="editHint">✏️ <b>Tipp:</b> Klicke direkt ins Vorschaubild auf eine Fläche – es öffnet sich eine Liste mit den ähnlichsten Dosenfarben zum Auswählen. Du kannst darin auch nach Hersteller suchen.</p>
+
+        <div class="secTitle">Farbverteilung</div>
+        <p class="secSub">Anteil jeder erkannten Farbe am Bild – in Prozent.</p>
+        <div id="distBar" class="distBar"></div>
+
+        <div class="secTitle">Empfohlene Sprühdosen</div>
+        <p class="secSub">Pro Bildfarbe die am besten passende Dose. Klicke auf das Farbquadrat (oder direkt auf eine Fläche im Vorschaubild), um aus einer Vorschlagsliste eine andere Dose zu wählen oder gezielt nach Hersteller zu suchen. Das Tag zeigt, wie stark du von der Originalfarbe abweichst.</p>
+        <div id="rows" class="rows"></div>
+
+        <div class="secTitle">Einkaufsliste</div>
+        <p class="secSub">Alle vorgeschlagenen Dosen auf einen Blick (Mehrfachtreffer zusammengefasst).</p>
+        <div id="shop" class="shop"></div>
+      </div>
+
+      <div class="hint">
+        <b>Hinweis zur Farbgenauigkeit:</b> Die Hex-Werte sind eine kuratierte Referenz und dienen der Orientierung.
+        Monitorfarben weichen vom echten Sprühergebnis ab – für die finale Wahl bitte immer den echten
+        Farbfächer/Swatch des Herstellers vergleichen.
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Sprühfarben-Finder · läuft komplett offline in deinem Browser – kein Upload, keine Cloud.<br>
+    Farbdaten: kuratierte Referenzpaletten von Montana&nbsp;Cans, Montana&nbsp;Colors&nbsp;(MTN), Molotow&nbsp;Premium &amp; Loop&nbsp;Colors.
+  </footer>
+</div>
+
+<!-- Vollbild-Vorschau -->
+<div id="bigModal" class="bigOverlay hidden">
+  <button id="bigClose" class="bigClose" title="Schließen">&times;</button>
+  <div class="bigHeader"><b id="bigCount">0</b> Farben matched</div>
+  <div class="bigCanvasBox">
+    <div class="bigCanvasWrap" id="bigWrap">
+      <canvas id="cvPrevBig"></canvas>
+      <div class="chipsLayer" id="chipsLayer"></div>
+    </div>
+  </div>
+  <p class="bigHint">✏️ <b>Klick</b> auf einen Marker oder ins Bild öffnet das Tausch-Popup · <b>Ziehen</b> verschiebt den Marker. <span style="opacity:.7">Schließen mit × oder Esc.</span></p>
+</div>
+
+<!-- Popup: Farbauswahl -->
+<div id="modal" class="modalOverlay hidden">
+  <div class="modalCard">
+    <button class="modalClose" id="modalClose" title="Schließen">&times;</button>
+    <h3>Farbe tauschen</h3>
+    <div class="curRow">
+      <span>Bildfarbe</span><span class="sw" id="mOrig"></span><b id="mOrigHex"></b>
+      <span style="margin:0 4px">→</span>
+      <span>aktuell</span><span class="sw" id="mCur"></span><b id="mCurTxt"></b>
+    </div>
+    <div class="searchRow">
+      <input id="canSearch" type="text" placeholder="Nach Name oder Code suchen…">
+      <select id="canBrand"><option value="">Alle Hersteller</option></select>
+    </div>
+    <div class="modalListHead">Vorschläge – nach Ähnlichkeit sortiert (ΔE = Abstand)</div>
+    <div id="canList" class="canList"></div>
+    <div class="modalFoot">
+      <button id="modalReset" class="ghost">Auf Vorschlag zurücksetzen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   1) FARB-DATENBANK  (kuratierte Referenzpaletten, Name + Code + Hex)
+   ========================================================================= */
+const PAINTS = [
+  /* ---------- MONTANA BLACK (Montana Cans) – echte Werte aus offizieller Farbtafel (PDF) ---------- */
+  {b:"Montana BLACK", c:"BLK1005", n:"Smash137's Potato", h:"#f7e593"},
+  {b:"Montana BLACK", c:"BLK1010", n:"easter yellow", h:"#ffe76a"},
+  {b:"Montana BLACK", c:"BLK1025", n:"kicking yellow", h:"#ffdb00"},
+  {b:"Montana BLACK", c:"BLK1030", n:"yellow", h:"#fcbf00"},
+  {b:"Montana BLACK", c:"BLK1045", n:"melon yellow", h:"#f7a600"},
+  {b:"Montana BLACK", c:"BLK1050", n:"topaz", h:"#d37c11"},
+  {b:"Montana BLACK", c:"BLK1060", n:"hazle", h:"#b44c2c"},
+  {b:"Montana BLACK", c:"BLK1070", n:"pecan nut", h:"#6f2e23"},
+  {b:"Montana BLACK", c:"BLK1080", n:"maroon", h:"#571f12"},
+  {b:"Montana BLACK", c:"BLK1110", n:"indian spice", h:"#e0a600"},
+  {b:"Montana BLACK", c:"BLK1120", n:"masala", h:"#b69722"},
+  {b:"Montana BLACK", c:"BLK1130", n:"delhi", h:"#a18115"},
+  {b:"Montana BLACK", c:"BLK1140", n:"bombay", h:"#6e572a"},
+  {b:"Montana BLACK", c:"BLK2060", n:"juice", h:"#f59e24"},
+  {b:"Montana BLACK", c:"BLK2070", n:"clockwork orange", h:"#ef7d0f"},
+  {b:"Montana BLACK", c:"BLK2075", n:"pure orange", h:"#eb6209"},
+  {b:"Montana BLACK", c:"BLK2085", n:"halloween", h:"#e94e0f"},
+  {b:"Montana BLACK", c:"BLK2093", n:"code red", h:"#e32a13"},
+  {b:"Montana BLACK", c:"BLK2110", n:"tomorrow", h:"#f28a48"},
+  {b:"Montana BLACK", c:"BLK2120", n:"Atom's Megablast", h:"#ec6725"},
+  {b:"Montana BLACK", c:"BLK3020", n:"fire rose", h:"#be1413"},
+  {b:"Montana BLACK", c:"BLK3062", n:"cardinal", h:"#6d0c24"},
+  {b:"Montana BLACK", c:"BLK3065", n:"merlot", h:"#451b17"},
+  {b:"Montana BLACK", c:"BLK3070", n:"cherry", h:"#361026"},
+  {b:"Montana BLACK", c:"BLK3080", n:"winegum", h:"#4e0027"},
+  {b:"Montana BLACK", c:"BLK3100", n:"miss piggy", h:"#f6b8c8"},
+  {b:"Montana BLACK", c:"BLK3120", n:"pink cadillac", h:"#f08eb3"},
+  {b:"Montana BLACK", c:"BLK3130", n:"pink panther", h:"#ea488d"},
+  {b:"Montana BLACK", c:"BLK3145", n:"punk pink", h:"#c31462"},
+  {b:"Montana BLACK", c:"BLK3148", n:"beast", h:"#e94190"},
+  {b:"Montana BLACK", c:"BLK3150", n:"freak", h:"#c70077"},
+  {b:"Montana BLACK", c:"BLK3155", n:"purple rain", h:"#9b206d"},
+  {b:"Montana BLACK", c:"BLK3160", n:"good times", h:"#b0036a"},
+  {b:"Montana BLACK", c:"BLK3170", n:"imperator", h:"#821d47"},
+  {b:"Montana BLACK", c:"BLK3200", n:"cocktail", h:"#f8c0b8"},
+  {b:"Montana BLACK", c:"BLK3220", n:"mr. crab", h:"#f39a87"},
+  {b:"Montana BLACK", c:"BLK3240", n:"sushi", h:"#f08265"},
+  {b:"Montana BLACK", c:"BLK3305", n:"patpong", h:"#f4a7b1"},
+  {b:"Montana BLACK", c:"BLK3310", n:"pink lemonade", h:"#ee717d"},
+  {b:"Montana BLACK", c:"BLK3320", n:"lollipop", h:"#e94964"},
+  {b:"Montana BLACK", c:"BLK3330", n:"bloody mary", h:"#bc1d3e"},
+  {b:"Montana BLACK", c:"BLK3920", n:"illusion", h:"#a4338a"},
+  {b:"Montana BLACK", c:"BLK3940", n:"magic", h:"#c16eaa"},
+  {b:"Montana BLACK", c:"BLK3995", n:"bubble bath", h:"#c7a5c4"},
+  {b:"Montana BLACK", c:"BLK4000", n:"ms. jackson", h:"#b88fc1"},
+  {b:"Montana BLACK", c:"BLK4020", n:"monster", h:"#8e4a93"},
+  {b:"Montana BLACK", c:"BLK4040", n:"pimp violet", h:"#6c2979"},
+  {b:"Montana BLACK", c:"BLK4060", n:"galaxy", h:"#4c144c"},
+  {b:"Montana BLACK", c:"BLK4115", n:"lavender", h:"#aca4c8"},
+  {b:"Montana BLACK", c:"BLK4130", n:"blue velvet", h:"#9488b7"},
+  {b:"Montana BLACK", c:"BLK4155", n:"royal purple", h:"#64569d"},
+  {b:"Montana BLACK", c:"BLK4160", n:"wizard", h:"#573d88"},
+  {b:"Montana BLACK", c:"BLK4182", n:"universe", h:"#19083c"},
+  {b:"Montana BLACK", c:"BLK4210", n:"gut", h:"#ab959e"},
+  {b:"Montana BLACK", c:"BLK4230", n:"kidney", h:"#846c79"},
+  {b:"Montana BLACK", c:"BLK4250", n:"liver", h:"#684d5f"},
+  {b:"Montana BLACK", c:"BLK4260", n:"dummy", h:"#e1b6c2"},
+  {b:"Montana BLACK", c:"BLK4280", n:"plum", h:"#b57281"},
+  {b:"Montana BLACK", c:"BLK4290", n:"amethyst", h:"#723345"},
+  {b:"Montana BLACK", c:"BLK4310", n:"edelgard", h:"#cdd2dd"},
+  {b:"Montana BLACK", c:"BLK4320", n:"brunhilde", h:"#a2b0d1"},
+  {b:"Montana BLACK", c:"BLK4330", n:"waltraut", h:"#7189c1"},
+  {b:"Montana BLACK", c:"BLK4340", n:"irmgard", h:"#52589d"},
+  {b:"Montana BLACK", c:"BLK5020", n:"baby blue", h:"#6ac8ee"},
+  {b:"Montana BLACK", c:"BLK5030", n:"light blue", h:"#00a2d7"},
+  {b:"Montana BLACK", c:"BLK5070", n:"horizon", h:"#0070ba"},
+  {b:"Montana BLACK", c:"BLK5077", n:"royal blue", h:"#00498f"},
+  {b:"Montana BLACK", c:"BLK5080", n:"ultramarine", h:"#03316b"},
+  {b:"Montana BLACK", c:"BLK5092", n:"dark indigo", h:"#001837"},
+  {b:"Montana BLACK", c:"BLK5125", n:"dove", h:"#9db7b7"},
+  {b:"Montana BLACK", c:"BLK5140", n:"seal", h:"#435c63"},
+  {b:"Montana BLACK", c:"BLK5160", n:"space", h:"#273d49"},
+  {b:"Montana BLACK", c:"BLK5180", n:"trout", h:"#98b0c6"},
+  {b:"Montana BLACK", c:"BLK5185", n:"marlin", h:"#587492"},
+  {b:"Montana BLACK", c:"BLK5190", n:"whale", h:"#274b68"},
+  {b:"Montana BLACK", c:"BLK5200", n:"ice blue", h:"#c4ddf0"},
+  {b:"Montana BLACK", c:"BLK5210", n:"lenor", h:"#96c4e5"},
+  {b:"Montana BLACK", c:"BLK5230", n:"blue lagoon", h:"#6197ca"},
+  {b:"Montana BLACK", c:"BLK5250", n:"knock out blue", h:"#0057a0"},
+  {b:"Montana BLACK", c:"BLK5270", n:"sorrento blue", h:"#183e7a"},
+  {b:"Montana BLACK", c:"BLK6000", n:"pistachio", h:"#e2df29"},
+  {b:"Montana BLACK", c:"BLK6005", n:"acid", h:"#c8d419"},
+  {b:"Montana BLACK", c:"BLK6010", n:"slimer", h:"#a8c813"},
+  {b:"Montana BLACK", c:"BLK6012", n:"oasis", h:"#a0a32b"},
+  {b:"Montana BLACK", c:"BLK6013", n:"spring", h:"#cbd66c"},
+  {b:"Montana BLACK", c:"BLK6015", n:"wild lime", h:"#b4cd2c"},
+  {b:"Montana BLACK", c:"BLK6045", n:"irish green", h:"#4ead33"},
+  {b:"Montana BLACK", c:"BLK6055", n:"boston", h:"#00853c"},
+  {b:"Montana BLACK", c:"BLK6060", n:"celtic", h:"#005d2d"},
+  {b:"Montana BLACK", c:"BLK6065", n:"banknote", h:"#003614"},
+  {b:"Montana BLACK", c:"BLK6070", n:"TAG green", h:"#002508"},
+  {b:"Montana BLACK", c:"BLK6075", n:"hippie", h:"#83c06f"},
+  {b:"Montana BLACK", c:"BLK6080", n:"mescaline", h:"#48ab62"},
+  {b:"Montana BLACK", c:"BLK6090", n:"woodstock", h:"#009248"},
+  {b:"Montana BLACK", c:"BLK6095", n:"plant", h:"#00762d"},
+  {b:"Montana BLACK", c:"BLK6110", n:"tiffany", h:"#7fc9cb"},
+  {b:"Montana BLACK", c:"BLK6130", n:"cool cologne", h:"#09b4bf"},
+  {b:"Montana BLACK", c:"BLK6150", n:"mermaid", h:"#00848d"},
+  {b:"Montana BLACK", c:"BLK6170", n:"neptune", h:"#003e4a"},
+  {b:"Montana BLACK", c:"BLK6175", n:"riffs", h:"#002a32"},
+  {b:"Montana BLACK", c:"BLK6180", n:"drops", h:"#78c7ca"},
+  {b:"Montana BLACK", c:"BLK6190", n:"nappies", h:"#00b2b5"},
+  {b:"Montana BLACK", c:"BLK6195", n:"surgery", h:"#00a298"},
+  {b:"Montana BLACK", c:"BLK6210", n:"E2E green", h:"#97ca96"},
+  {b:"Montana BLACK", c:"BLK6220", n:"revolt green", h:"#4cb05b"},
+  {b:"Montana BLACK", c:"BLK6240", n:"atlantis", h:"#008368"},
+  {b:"Montana BLACK", c:"BLK6310", n:"olymp", h:"#c7dbc9"},
+  {b:"Montana BLACK", c:"BLK6320", n:"hope", h:"#aed7c0"},
+  {b:"Montana BLACK", c:"BLK6330", n:"patina", h:"#61b89d"},
+  {b:"Montana BLACK", c:"BLK6340", n:"copper green", h:"#007764"},
+  {b:"Montana BLACK", c:"BLK6410", n:"trabi", h:"#d1d5be"},
+  {b:"Montana BLACK", c:"BLK6420", n:"beetle", h:"#bfc696"},
+  {b:"Montana BLACK", c:"BLK6430", n:"reseda", h:"#a3ac7e"},
+  {b:"Montana BLACK", c:"BLK6510", n:"fog", h:"#a6b39e"},
+  {b:"Montana BLACK", c:"BLK6520", n:"mist", h:"#788d7d"},
+  {b:"Montana BLACK", c:"BLK6530", n:"storm", h:"#506146"},
+  {b:"Montana BLACK", c:"BLK6610", n:"bamboo", h:"#d1c783"},
+  {b:"Montana BLACK", c:"BLK6620", n:"hemp", h:"#a39043"},
+  {b:"Montana BLACK", c:"BLK6625", n:"boa", h:"#8f8534"},
+  {b:"Montana BLACK", c:"BLK6630", n:"pan", h:"#735c3b"},
+  {b:"Montana BLACK", c:"BLK6710", n:"pear green", h:"#b9b530"},
+  {b:"Montana BLACK", c:"BLK6720", n:"lost island", h:"#718431"},
+  {b:"Montana BLACK", c:"BLK6725", n:"troops", h:"#565b21"},
+  {b:"Montana BLACK", c:"BLK6730", n:"toad", h:"#30411f"},
+  {b:"Montana BLACK", c:"BLK6905", n:"face", h:"#d6d0b1"},
+  {b:"Montana BLACK", c:"BLK6910", n:"hannibal", h:"#aaae8d"},
+  {b:"Montana BLACK", c:"BLK6920", n:"murdock", h:"#838666"},
+  {b:"Montana BLACK", c:"BLK6930", n:"b.a bosko", h:"#42402b"},
+  {b:"Montana BLACK", c:"BLK7010", n:"jaws", h:"#e8eae4"},
+  {b:"Montana BLACK", c:"BLK7030", n:"mouse", h:"#bebbb5"},
+  {b:"Montana BLACK", c:"BLK7050", n:"shark", h:"#838b84"},
+  {b:"Montana BLACK", c:"BLK7070", n:"rhino", h:"#545c57"},
+  {b:"Montana BLACK", c:"BLK7080", n:"ant", h:"#4b433f"},
+  {b:"Montana BLACK", c:"BLK7110", n:"gambetta", h:"#c7bcaa"},
+  {b:"Montana BLACK", c:"BLK7120", n:"lennox", h:"#9f9385"},
+  {b:"Montana BLACK", c:"BLK7130", n:"lambrate", h:"#7f746a"},
+  {b:"Montana BLACK", c:"BLK7140", n:"industriilor", h:"#554239"},
+  {b:"Montana BLACK", c:"BLK7210", n:"houdini", h:"#a6a0a5"},
+  {b:"Montana BLACK", c:"BLK7220", n:"morpheus", h:"#867d86"},
+  {b:"Montana BLACK", c:"BLK7230", n:"nostradamus", h:"#5a535e"},
+  {b:"Montana BLACK", c:"BLK7320", n:"ghetto", h:"#a3a09e"},
+  {b:"Montana BLACK", c:"BLK7340", n:"dumbo", h:"#76736e"},
+  {b:"Montana BLACK", c:"BLK7360", n:"slate", h:"#423c39"},
+  {b:"Montana BLACK", c:"BLK8000", n:"ivory", h:"#f4e8c5"},
+  {b:"Montana BLACK", c:"BLK8010", n:"sand", h:"#c09450"},
+  {b:"Montana BLACK", c:"BLK8020", n:"beige", h:"#d9b783"},
+  {b:"Montana BLACK", c:"BLK8030", n:"Iced Coffee", h:"#daac94"},
+  {b:"Montana BLACK", c:"BLK8040", n:"cremino", h:"#c8936f"},
+  {b:"Montana BLACK", c:"BLK8050", n:"frappé", h:"#a87658"},
+  {b:"Montana BLACK", c:"BLK8060", n:"chocolate", h:"#784d33"},
+  {b:"Montana BLACK", c:"BLK8070", n:"jawa", h:"#4c2218"},
+  {b:"Montana BLACK", c:"BLK8080", n:"rust", h:"#922f2e"},
+  {b:"Montana BLACK", c:"BLK8110", n:"arabian", h:"#c3a877"},
+  {b:"Montana BLACK", c:"BLK8120", n:"gobi", h:"#ac936a"},
+  {b:"Montana BLACK", c:"BLK8130", n:"syrian", h:"#917750"},
+  {b:"Montana BLACK", c:"BLK8210", n:"after", h:"#9f6c5e"},
+  {b:"Montana BLACK", c:"BLK8220", n:"snail", h:"#f5a58d"},
+  {b:"Montana BLACK", c:"BLK8230", n:"koi", h:"#e8412c"},
+  {b:"Montana BLACK", c:"BLK8240", n:"falling", h:"#b1311d"},
+  {b:"Montana BLACK", c:"BLK8250", n:"candy bar", h:"#734236"},
+  {b:"Montana BLACK", c:"BLK8260", n:"mud", h:"#512320"},
+  {b:"Montana BLACK", c:"BLK9001", n:"black", h:"#000000"},
+  {b:"Montana BLACK", c:"BLK9100", n:"snow white", h:"#ffffff"},
+  {b:"Montana BLACK", c:"BLK9105", n:"white", h:"#fafcf6"},
+
+  /* ---------- MONTANA GOLD (Montana Cans) – echte Werte aus offizieller Farbtafel (PDF) ---------- */
+  {b:"Montana GOLD", c:"CL6310", n:"Poison Light", h:"#e3df2a"},
+  {b:"Montana GOLD", c:"CL6300", n:"Poison Pastel", h:"#eee437"},
+  {b:"Montana GOLD", c:"CL5220", n:"Denim Stonewashed", h:"#6297c6"},
+  {b:"Montana GOLD", c:"CL5210", n:"Denim", h:"#98c5e1"},
+  {b:"Montana GOLD", c:"CL5200", n:"Denim Light", h:"#c9e0f3"},
+  {b:"Montana GOLD", c:"CL4300", n:"Louie Lilac", h:"#1e2357"},
+  {b:"Montana GOLD", c:"CL2130", n:"Shrimp Dark", h:"#ee8364"},
+  {b:"Montana GOLD", c:"CL2120", n:"Shrimp", h:"#f29c85"},
+  {b:"Montana GOLD", c:"CL2100", n:"Shrimp Pastel", h:"#f7bdb2"},
+  {b:"Montana GOLD", c:"G6010", n:"Linden Green", h:"#c4dda8"},
+  {b:"Montana GOLD", c:"G6000", n:"Venom", h:"#e5eece"},
+  {b:"Montana GOLD", c:"G5170", n:"Navy", h:"#062331"},
+  {b:"Montana GOLD", c:"G6040", n:"Lawn Green", h:"#7eb125"},
+  {b:"Montana GOLD", c:"G6030", n:"Lime", h:"#adc80b"},
+  {b:"Montana GOLD", c:"G6020", n:"Green Apple", h:"#a2c86c"},
+  {b:"Montana GOLD", c:"G6070", n:"Smaragd Green", h:"#005029"},
+  {b:"Montana GOLD", c:"G6060", n:"Fern Green", h:"#006030"},
+  {b:"Montana GOLD", c:"G6050", n:"Greenery", h:"#008332"},
+  {b:"Montana GOLD", c:"G6080", n:"Jungle Green", h:"#003b24"},
+  {b:"Montana GOLD", c:"G6100", n:"Liberty", h:"#eff5e4"},
+  {b:"Montana GOLD", c:"G6090", n:"Deep Forest", h:"#002f1e"},
+  {b:"Montana GOLD", c:"G6150", n:"Malachite Dark", h:"#3a8569"},
+  {b:"Montana GOLD", c:"G6120", n:"Malachite Light", h:"#aed7c0"},
+  {b:"Montana GOLD", c:"G6130", n:"Malachite", h:"#65b79a"},
+  {b:"Montana GOLD", c:"G6280", n:"Petrol", h:"#00363e"},
+  {b:"Montana GOLD", c:"G6200", n:"Venice", h:"#e7f2e6"},
+  {b:"Montana GOLD", c:"G6210", n:"CAN2 Cool Candy", h:"#c1e2e1"},
+  {b:"Montana GOLD", c:"G6230", n:"Pool", h:"#93d1da"},
+  {b:"Montana GOLD", c:"G6250", n:"Dolphins", h:"#50aec5"},
+  {b:"Montana GOLD", c:"G6270", n:"Reef", h:"#006375"},
+  {b:"Montana GOLD", c:"G6160", n:"Pine", h:"#006d57"},
+  {b:"Montana GOLD", c:"G7000", n:"Pebble", h:"#f1f0ea"},
+  {b:"Montana GOLD", c:"G7010", n:"Marble", h:"#e2e3e1"},
+  {b:"Montana GOLD", c:"G7020", n:"Wall", h:"#c7c7c6"},
+  {b:"Montana GOLD", c:"G7030", n:"Iron Curtain", h:"#abaaa3"},
+  {b:"Montana GOLD", c:"G7050", n:"Roof", h:"#7d7e7d"},
+  {b:"Montana GOLD", c:"G7060", n:"Gravel", h:"#616969"},
+  {b:"Montana GOLD", c:"G7070", n:"Stealth", h:"#303b3f"},
+  {b:"Montana GOLD", c:"G7090", n:"Coke", h:"#0d1513"},
+  {b:"Montana GOLD", c:"G1060", n:"Mustard", h:"#aa8717"},
+  {b:"Montana GOLD", c:"G1440", n:"Toffee", h:"#cd926d"},
+  {b:"Montana GOLD", c:"G1470", n:"Palish Brown", h:"#6d4e34"},
+  {b:"Montana GOLD", c:"G1450", n:"Hot Chocolate", h:"#875a45"},
+  {b:"Montana GOLD", c:"G1430", n:"Make-up", h:"#daad92"},
+  {b:"Montana GOLD", c:"G1240", n:"Golden Yellow", h:"#ec8904"},
+  {b:"Montana GOLD", c:"G1250", n:"Terra", h:"#c97720"},
+  {b:"Montana GOLD", c:"G1260", n:"Mushroom", h:"#513a1b"},
+  {b:"Montana GOLD", c:"G1400", n:"Bone", h:"#f8ebd9"},
+  {b:"Montana GOLD", c:"G1410", n:"Latte", h:"#f6e3ca"},
+  {b:"Montana GOLD", c:"G1420", n:"Cappuccino", h:"#edc5a8"},
+  {b:"Montana GOLD", c:"G2000", n:"White Orange", h:"#fbe9cf"},
+  {b:"Montana GOLD", c:"G1000", n:"Vanilla", h:"#ffed9a"},
+  {b:"Montana GOLD", c:"G1020", n:"Citrus", h:"#ffd800"},
+  {b:"Montana GOLD", c:"G1030", n:"Banana", h:"#ebc000"},
+  {b:"Montana GOLD", c:"G1040", n:"Asia", h:"#e5bf00"},
+  {b:"Montana GOLD", c:"G1050", n:"Curry", h:"#c69f18"},
+  {b:"Montana GOLD", c:"G1080", n:"Everglade", h:"#7e6330"},
+  {b:"Montana GOLD", c:"G1100", n:"Butta", h:"#fdef73"},
+  {b:"Montana GOLD", c:"G1110", n:"Brimstone", h:"#f5e600"},
+  {b:"Montana GOLD", c:"G1130", n:"Pepperoni Mild", h:"#bbb52d"},
+  {b:"Montana GOLD", c:"G1140", n:"Pepperoni Hot", h:"#8a812f"},
+  {b:"Montana GOLD", c:"G1150", n:"Reed", h:"#635e25"},
+  {b:"Montana GOLD", c:"G1170", n:"Nato", h:"#45432b"},
+  {b:"Montana GOLD", c:"G1180", n:"Military Green", h:"#242a22"},
+  {b:"Montana GOLD", c:"G1200", n:"Pudding", h:"#ffdd70"},
+  {b:"Montana GOLD", c:"G1210", n:"Yellow Submarine", h:"#fecb34"},
+  {b:"Montana GOLD", c:"G1220", n:"Yellow Cab", h:"#fbb900"},
+  {b:"Montana GOLD", c:"G1230", n:"Yolk", h:"#f6a000"},
+  {b:"Montana GOLD", c:"G1010", n:"Easter Yellow", h:"#ffe263"},
+  {b:"Montana GOLD", c:"G2010", n:"Orange Ice", h:"#fde9d9"},
+  {b:"Montana GOLD", c:"G2040", n:"Scampi", h:"#f29531"},
+  {b:"Montana GOLD", c:"G2030", n:"Blast Orange", h:"#f4a44a"},
+  {b:"Montana GOLD", c:"G2020", n:"Creme Orange", h:"#f9c174"},
+  {b:"Montana GOLD", c:"G2050", n:"Orangina", h:"#f08217"},
+  {b:"Montana GOLD", c:"G2090", n:"Red Orange", h:"#e43e1d"},
+  {b:"Montana GOLD", c:"G2080", n:"Pure Orange", h:"#ea5917"},
+  {b:"Montana GOLD", c:"G2070", n:"Orange", h:"#eb6515"},
+  {b:"Montana GOLD", c:"G2060", n:"Capri", h:"#ee7511"},
+  {b:"Montana GOLD", c:"G2095", n:"Blood Orange", h:"#db0824"},
+  {b:"Montana GOLD", c:"G4110", n:"Light Lilac", h:"#a99ac6"},
+  {b:"Montana GOLD", c:"G4000", n:"Pale Pink", h:"#e0c2cb"},
+  {b:"Montana GOLD", c:"G4010", n:"Mortadella", h:"#d0a2ac"},
+  {b:"Montana GOLD", c:"G4020", n:"Dusty Pink", h:"#9a536a"},
+  {b:"Montana GOLD", c:"G4030", n:"Ancient Pink", h:"#834250"},
+  {b:"Montana GOLD", c:"G4040", n:"Powder Pink", h:"#792a3e"},
+  {b:"Montana GOLD", c:"G4100", n:"White Lilac", h:"#d2c2dd"},
+  {b:"Montana GOLD", c:"G3020", n:"Strawberry", h:"#e73d4f"},
+  {b:"Montana GOLD", c:"G3010", n:"Bazooka Joe", h:"#ee8798"},
+  {b:"Montana GOLD", c:"G3000", n:"Lychee", h:"#f7bec1"},
+  {b:"Montana GOLD", c:"G3130", n:"Pink Pink", h:"#d74489"},
+  {b:"Montana GOLD", c:"G3110", n:"Frozen Raspberry", h:"#eda9c2"},
+  {b:"Montana GOLD", c:"G3085", n:"Vampirella", h:"#271619"},
+  {b:"Montana GOLD", c:"G3080", n:"Black Red", h:"#3e1411"},
+  {b:"Montana GOLD", c:"G3070", n:"Purple Red", h:"#5b171c"},
+  {b:"Montana GOLD", c:"G3060", n:"Royal Red", h:"#721d23"},
+  {b:"Montana GOLD", c:"G3050", n:"Brick", h:"#971b25"},
+  {b:"Montana GOLD", c:"G3040", n:"Ketchup", h:"#b91829"},
+  {b:"Montana GOLD", c:"G3030", n:"Raspberry", h:"#d6043d"},
+  {b:"Montana GOLD", c:"G3150", n:"Cherry Blossom", h:"#8e145f"},
+  {b:"Montana GOLD", c:"G3100", n:"Frozen Strawberry", h:"#fad2da"},
+  {b:"Montana GOLD", c:"G4130", n:"Teen Spirit", h:"#7d6fad"},
+  {b:"Montana GOLD", c:"G4150", n:"Lavender", h:"#564289"},
+  {b:"Montana GOLD", c:"G4160", n:"Gonzo", h:"#3a377e"},
+  {b:"Montana GOLD", c:"G4170", n:"Blue Velvet", h:"#2c3069"},
+  {b:"Montana GOLD", c:"G4180", n:"Welsh", h:"#162245"},
+  {b:"Montana GOLD", c:"G4190", n:"Cassis", h:"#10182a"},
+  {b:"Montana GOLD", c:"G4200", n:"Crocus", h:"#cdb6d6"},
+  {b:"Montana GOLD", c:"G4210", n:"Viola", h:"#b08fbe"},
+  {b:"Montana GOLD", c:"G4220", n:"Sweet Dream", h:"#8d4d91"},
+  {b:"Montana GOLD", c:"G4230", n:"Valerie", h:"#6e307f"},
+  {b:"Montana GOLD", c:"G4240", n:"Lakers", h:"#522157"},
+  {b:"Montana GOLD", c:"G4250", n:"Deep Purple", h:"#5d3154"},
+  {b:"Montana GOLD", c:"G4260", n:"Black Purple", h:"#331441"},
+  {b:"Montana GOLD", c:"G5075", n:"Signal Blue", h:"#005087"},
+  {b:"Montana GOLD", c:"G5160", n:"Deep Sea", h:"#0a353f"},
+  {b:"Montana GOLD", c:"G5150", n:"Fjord", h:"#265162"},
+  {b:"Montana GOLD", c:"G5140", n:"Mt. Fuji", h:"#477283"},
+  {b:"Montana GOLD", c:"G5120", n:"Mt. Everest", h:"#62a2b9"},
+  {b:"Montana GOLD", c:"G5110", n:"Himalaya", h:"#89cadc"},
+  {b:"Montana GOLD", c:"G5105", n:"Summit", h:"#b9e1ea"},
+  {b:"Montana GOLD", c:"G5100", n:"Polar Blue", h:"#d8eded"},
+  {b:"Montana GOLD", c:"G5085", n:"Blue Note", h:"#003457"},
+  {b:"Montana GOLD", c:"G5080", n:"Ultramarine", h:"#003a6f"},
+  {b:"Montana GOLD", c:"G5060", n:"Blue Magic", h:"#006ead"},
+  {b:"Montana GOLD", c:"G5000", n:"Flipper", h:"#cde9ef"},
+  {b:"Montana GOLD", c:"G5010", n:"Fresh Blue", h:"#a2d7e8"},
+  {b:"Montana GOLD", c:"G5020", n:"Baby Blue", h:"#70c8e6"},
+  {b:"Montana GOLD", c:"G5030", n:"Bermuda", h:"#1bb0d8"},
+  {b:"Montana GOLD", c:"G5040", n:"Light Blue", h:"#00a0d1"},
+  {b:"Montana GOLD", c:"G5050", n:"Sky Blue", h:"#008cc7"},
+  {b:"Montana GOLD", c:"G5090", n:"Nautilus", h:"#0b2337"},
+  {b:"Montana GOLD", c:"G6260", n:"Aqua", h:"#0086a2"},
+  {b:"Montana GOLD", c:"CL6330", n:"Poison Dark", h:"#adc70b"},
+  {b:"Montana GOLD", c:"CL6320", n:"Poison", h:"#cad315"},
+  {b:"Montana GOLD", c:"CL8320", n:"Chestnut", h:"#4d1a1b"},
+  {b:"Montana GOLD", c:"CL8310", n:"Hazelnut", h:"#81441f"},
+  {b:"Montana GOLD", c:"CL8300", n:"Sand", h:"#b89248"},
+  {b:"Montana GOLD", c:"CL6420", n:"Manila Dark", h:"#41402c"},
+  {b:"Montana GOLD", c:"CL6410", n:"Manila Green", h:"#838662"},
+  {b:"Montana GOLD", c:"CL6400", n:"Manila Light", h:"#a6a87a"},
+  {b:"Montana GOLD", c:"CL6340", n:"Olive Green", h:"#494e1f"},
+  {b:"Montana GOLD", c:"P1000", n:"100% Yellow", h:"#ffed00"},
+  {b:"Montana GOLD", c:"F1000", n:"Flash Yellow", h:"#ffec00"},
+  {b:"Montana GOLD", c:"P2000", n:"100% Cyan", h:"#00aec7"},
+  {b:"Montana GOLD", c:"F3000", n:"Fire Red", h:"#e63d1f"},
+  {b:"Montana GOLD", c:"F4000", n:"Gleaming Pink", h:"#e53088"},
+  {b:"Montana GOLD", c:"F2000", n:"Power Orange", h:"#f39628"},
+  {b:"Montana GOLD", c:"S3020", n:"Shock KENT Blood Red", h:"#af141e"},
+  {b:"Montana GOLD", c:"S4000", n:"Shock Pink Light", h:"#e887b2"},
+  {b:"Montana GOLD", c:"S4010", n:"Shock Pink", h:"#c73475"},
+  {b:"Montana GOLD", c:"S4220", n:"Shock Lilac", h:"#302c65"},
+  {b:"Montana GOLD", c:"S5000", n:"Shock Blue Light", h:"#7ec5d3"},
+  {b:"Montana GOLD", c:"S5010", n:"Shock Blue", h:"#004e92"},
+  {b:"Montana GOLD", c:"S1000", n:"Shock Yellow Light", h:"#ffde0e"},
+  {b:"Montana GOLD", c:"S1010", n:"Shock Yellow", h:"#fbbc00"},
+  {b:"Montana GOLD", c:"S2000", n:"Shock Orange Light", h:"#ee7d0a"},
+  {b:"Montana GOLD", c:"S2010", n:"Shock Orange", h:"#ea5b17"},
+  {b:"Montana GOLD", c:"S2020", n:"Shock Orange Dark", h:"#e5311d"},
+  {b:"Montana GOLD", c:"S3000", n:"Shock Red", h:"#cb0c1f"},
+  {b:"Montana GOLD", c:"S6010", n:"Shock Green", h:"#007937"},
+  {b:"Montana GOLD", c:"S6020", n:"Shock Green Dark", h:"#00622f"},
+  {b:"Montana GOLD", c:"S8000", n:"Shock Brown Light", h:"#b1582a"},
+  {b:"Montana GOLD", c:"S8010", n:"Shock Brown", h:"#5a3122"},
+  {b:"Montana GOLD", c:"S8020", n:"Shock Brown Dark", h:"#312212"},
+  {b:"Montana GOLD", c:"S9000", n:"Shock Black", h:"#0c0b0a"},
+  {b:"Montana GOLD", c:"S6000", n:"Shock Green Light", h:"#7eb627"},
+  {b:"Montana GOLD", c:"S9120", n:"Shock White Pure", h:"#ffffff"},
+  {b:"Montana GOLD", c:"S9100", n:"Shock White", h:"#ffffff"},
+  {b:"Montana GOLD", c:"S9110", n:"Shock White Cream", h:"#f9f6e9"},
+  {b:"Montana GOLD", c:"F5000", n:"Flame Blue", h:"#008fcf"},
+  {b:"Montana GOLD", c:"P3000", n:"100% Magenta", h:"#cf0065"},
+  {b:"Montana GOLD", c:"F9100", n:"Disco White", h:"#f7fcff"},
+  {b:"Montana GOLD", c:"F6000", n:"Acid Green", h:"#85bc4b"},
+  {b:"Montana GOLD", c:"F6200", n:"Active Cyan", h:"#1cb19f"},
+  {b:"Montana GOLD", c:"G8000", n:"Elm", h:"#f6efcd"},
+  {b:"Montana GOLD", c:"G8010", n:"Sahara Yellow", h:"#e6d59c"},
+  {b:"Montana GOLD", c:"G8020", n:"Sahara Beige", h:"#dabb81"},
+  {b:"Montana GOLD", c:"G8040", n:"Duck Season", h:"#b2925f"},
+  {b:"Montana GOLD", c:"G8145", n:"Anthracite", h:"#192120"},
+  {b:"Montana GOLD", c:"G8170", n:"Lip", h:"#944d54"},
+  {b:"Montana GOLD", c:"G8150", n:"Concrete", h:"#353028"},
+  {b:"Montana GOLD", c:"G8120", n:"Cacao", h:"#543120"},
+  {b:"Montana GOLD", c:"G8080", n:"Dirty Apricot", h:"#d78366"},
+  {b:"Montana GOLD", c:"G8085", n:"Aubergine", h:"#341e1f"},
+  {b:"Montana GOLD", c:"G8090", n:"Nougat", h:"#b87452"},
+  {b:"Montana GOLD", c:"G8100", n:"Orange Brown", h:"#7d3924"},
+  {b:"Montana GOLD", c:"G8110", n:"Rusto Coat", h:"#912b2f"},
+  {b:"Montana GOLD", c:"G8115", n:"Wine Red", h:"#3e161a"},
+  {b:"Montana GOLD", c:"G8175", n:"Paris", h:"#cbb5bd"},
+  {b:"Montana GOLD", c:"G8070", n:"Salmon", h:"#f4a78d"},
+  {b:"Montana GOLD", c:"G8190", n:"Flesh", h:"#d4beb9"},
+  {b:"Montana GOLD", c:"G8180", n:"Brain", h:"#d6c5c0"},
+  {b:"Montana GOLD", c:"G7230", n:"Buzzard", h:"#e0dfd7"},
+  {b:"Montana GOLD", c:"G7220", n:"Ceramic", h:"#f1efe9"},
+  {b:"Montana GOLD", c:"G7210", n:"Dolomite", h:"#f6f5ef"},
+  {b:"Montana GOLD", c:"G7260", n:"Meteorite", h:"#8b8d8a"},
+  {b:"Montana GOLD", c:"G7250", n:"Asphalt", h:"#b6b7b4"},
+  {b:"Montana GOLD", c:"G7240", n:"Yosemite", h:"#e0ddcb"},
+  {b:"Montana GOLD", c:"G7270", n:"Basalt", h:"#555755"},
+
+  /* ---------- MTN 94 (Montana Colors) – echte Werte: mtn-shop.de + kuratiert ---------- */
+  {b:"MTN 94", c:"RV-9010", n:"White", h:"#F7F7F4"},
+  {b:"MTN 94", c:"RV-7047", n:"Pearl Grey", h:"#C4C5C2"},
+  {b:"MTN 94", c:"RV-7042", n:"London Grey", h:"#8C8F8E"},
+  {b:"MTN 94", c:"RV-7016", n:"Anthracite Grey", h:"#4B4F52"},
+  {b:"MTN 94", c:"RV-9011", n:"Black", h:"#1A1B1D"},
+  {b:"MTN 94", c:"RV-1021", n:"Light Yellow", h:"#fedf00"},
+  {b:"MTN 94", c:"RV-222", n:"Calcuta Yellow", h:"#F7B500"},
+  {b:"MTN 94", c:"RV-207", n:"Lava Orange", h:"#F26B21"},
+  {b:"MTN 94", c:"RV-2003", n:"Mango", h:"#F89C3B"},
+  {b:"MTN 94", c:"RV-242", n:"Vampire Red", h:"#C1121C"},
+  {b:"MTN 94", c:"RV-3020", n:"Tomato Red", h:"#E2231A"},
+  {b:"MTN 94", c:"RV-211", n:"Cherry Tree", h:"#9E1C32"},
+  {b:"MTN 94", c:"RV-208", n:"Pink Tokyo", h:"#EC1E79"},
+  {b:"MTN 94", c:"RV-4003", n:"Erika", h:"#e85b99"},
+  {b:"MTN 94", c:"RV-200", n:"Plancton", h:"#e8d6c8"},
+  {b:"MTN 94", c:"RV-228", n:"Witch Purple", h:"#7B3F98"},
+  {b:"MTN 94", c:"RV-30", n:"Ultramarine Blue", h:"#23348C"},
+  {b:"MTN 94", c:"RV-5005", n:"Avus Blue", h:"#1C57A5"},
+  {b:"MTN 94", c:"RV-174", n:"Pacific Blue", h:"#0090C9"},
+  {b:"MTN 94", c:"RV-29", n:"Mediterranean Blue", h:"#00ADD8"},
+  {b:"MTN 94", c:"RV-16", n:"Light Blue", h:"#7CC4E8"},
+  {b:"MTN 94", c:"RV-34", n:"Acapulco Green", h:"#00A88E"},
+  {b:"MTN 94", c:"RV-6018", n:"Guacamole Green", h:"#8CBE3F"},
+  {b:"MTN 94", c:"RV-13", n:"Valdivia Green", h:"#1E9E52"},
+  {b:"MTN 94", c:"RV-272", n:"Mojito Green", h:"#3FB58A"},
+  {b:"MTN 94", c:"RV-6", n:"Cologne Green", h:"#0F5C35"},
+  {b:"MTN 94", c:"RV-129", n:"Beige", h:"#D8C7A0"},
+  {b:"MTN 94", c:"RV-260", n:"Atacama Brown", h:"#9A5A2E"},
+  {b:"MTN 94", c:"RV-35", n:"Chocolate Brown", h:"#41302a"},
+  {b:"MTN 94", c:"RV-261", n:"Aloe Vera", h:"#C8D88A"},
+  {b:"MTN 94", c:"RV-4011", n:"Malva Pink", h:"#C98BBE"},
+  {b:"MTN 94", c:"RV-184", n:"Sky Blue Light", h:"#AED4EC"},
+  {b:"MTN 94", c:"RV-189", n:"Ipanema Yellow", h:"#fff9c3"},
+  {b:"MTN 94", c:"RV-20", n:"Party Yellow", h:"#ffef8c"},
+  {b:"MTN 94", c:"RV-109", n:"Canarias Yellow", h:"#fff058"},
+  {b:"MTN 94", c:"RV-110", n:"Yosemite Yellow", h:"#c7b300"},
+  {b:"MTN 94", c:"RV-111", n:"Babel Green", h:"#a29400"},
+  {b:"MTN 94", c:"RV-112", n:"Mission Green", h:"#766a10"},
+  {b:"MTN 94", c:"RV-113", n:"Dragon Green", h:"#5e5003"},
+  {b:"MTN 94", c:"RV-114", n:"Maya Green", h:"#3d3408"},
+  {b:"MTN 94", c:"RV-192", n:"Sundance", h:"#ffebc2"},
+  {b:"MTN 94", c:"RV-102", n:"Dalai Orange", h:"#fddca3"},
+  {b:"MTN 94", c:"RV-103", n:"Plural Orange", h:"#fac67e"},
+  {b:"MTN 94", c:"RV-50", n:"Solar Orange", h:"#f7b060"},
+  {b:"MTN 94", c:"RV-105", n:"Tangerine", h:"#f5a54a"},
+  {b:"MTN 94", c:"RV-106", n:"Lava Orange", h:"#ef8407"},
+  {b:"MTN 94", c:"RV-2004", n:"Orange", h:"#ea640d"},
+  {b:"MTN 94", c:"RV-107", n:"Mars Orange", h:"#e64715"},
+  {b:"MTN 94", c:"RV-108", n:"Phoenix Orange", h:"#be3819"},
+  {b:"MTN 94", c:"RV-190", n:"Malta White", h:"#f9f6e9"},
+  {b:"MTN 94", c:"RV-1013", n:"Bone White", h:"#f3efd6"},
+  {b:"MTN 94", c:"RV-135", n:"Safari Brown", h:"#eadfa8"},
+  {b:"MTN 94", c:"RV-136", n:"Inca Brown", h:"#d9b365"},
+  {b:"MTN 94", c:"RV-137", n:"Kraft Brown", h:"#bd9b61"},
+  {b:"MTN 94", c:"RV-138", n:"Marrakech", h:"#99743f"},
+  {b:"MTN 94", c:"RV-139", n:"Sequoia Brown", h:"#6f5229"},
+  {b:"MTN 94", c:"RV-140", n:"Mole Brown", h:"#503915"},
+  {b:"MTN 94", c:"RV-141", n:"Gondola Brown", h:"#412c13"},
+  {b:"MTN 94", c:"RV-191", n:"Jaima Brown", h:"#f1e8de"},
+  {b:"MTN 94", c:"RV-94", n:"Dingo Brown", h:"#e8d0b7"},
+  {b:"MTN 94", c:"RV-95", n:"Tana Brown", h:"#d2a785"},
+  {b:"MTN 94", c:"RV-96", n:"Montserrat", h:"#cc955e"},
+  {b:"MTN 94", c:"RV-97", n:"Chiapas Brown", h:"#a0682b"},
+  {b:"MTN 94", c:"RV-98", n:"Bean Brown", h:"#a65f2f"},
+  {b:"MTN 94", c:"RV-99", n:"Glace Brown", h:"#7a3d24"},
+  {b:"MTN 94", c:"RV-100", n:"Coffee Brown", h:"#402009"},
+  {b:"MTN 94", c:"RV-101", n:"Ebony Brown", h:"#2f1109"},
+  {b:"MTN 94", c:"RV-193", n:"Chewing Gum", h:"#f6c3d3"},
+  {b:"MTN 94", c:"RV-115", n:"Tutti Frutti", h:"#ea949d"},
+  {b:"MTN 94", c:"RV-3017", n:"Fever Red", h:"#dc534d"},
+  {b:"MTN 94", c:"RV-116", n:"Blood Red", h:"#d52f25"},
+  {b:"MTN 94", c:"RV-3001", n:"Vivid Red", h:"#b3061e"},
+  {b:"MTN 94", c:"RV-47", n:"Clandestine Red", h:"#950825"},
+  {b:"MTN 94", c:"RV-3004", n:"Bordeaux Red", h:"#610819"},
+  {b:"MTN 94", c:"RV-3007", n:"Cherokee Red", h:"#3a0807"},
+  {b:"MTN 94", c:"RV-77", n:"Night Red", h:"#2d0604"},
+  {b:"MTN 94", c:"RV-194", n:"Supernova Pink", h:"#fce6eb"},
+  {b:"MTN 94", c:"RV-164", n:"Tokyo Pink", h:"#f7c7d7"},
+  {b:"MTN 94", c:"RV-165", n:"Orchid Pink", h:"#ec7faa"},
+  {b:"MTN 94", c:"RV-4010", n:"Magenta", h:"#d90075"},
+  {b:"MTN 94", c:"RV-166", n:"Acai Red", h:"#9a004b"},
+  {b:"MTN 94", c:"RV-167", n:"Rioja Red", h:"#6b0037"},
+  {b:"MTN 94", c:"RV-168", n:"Anger Red", h:"#550026"},
+  {b:"MTN 94", c:"RV-169", n:"Taurus Red", h:"#36001c"},
+  {b:"MTN 94", c:"RV-196", n:"Saudade Pink", h:"#f2dddd"},
+  {b:"MTN 94", c:"RV-86", n:"Boreal Pink", h:"#e3bfc3"},
+  {b:"MTN 94", c:"RV-87", n:"Stereo Pink", h:"#ca95a4"},
+  {b:"MTN 94", c:"RV-88", n:"Single Pink", h:"#a06c7e"},
+  {b:"MTN 94", c:"RV-89", n:"Compact Red", h:"#864a54"},
+  {b:"MTN 94", c:"RV-90", n:"Bitacora Red", h:"#582b3a"},
+  {b:"MTN 94", c:"RV-91", n:"Pandora Red", h:"#4f1f30"},
+  {b:"MTN 94", c:"RV-92", n:"Gaudi Red", h:"#321129"},
+  {b:"MTN 94", c:"RV-93", n:"Stendhal Red", h:"#1e000e"},
+  {b:"MTN 94", c:"RV-197", n:"Penelope Brown", h:"#f8ede7"},
+  {b:"MTN 94", c:"RV-176", n:"Sensible Brown", h:"#efd9d0"},
+  {b:"MTN 94", c:"RV-203", n:"Oak Brown", h:"#a86059"},
+  {b:"MTN 94", c:"RV-204", n:"Interrail Brown", h:"#9f3d44"},
+  {b:"MTN 94", c:"RV-205", n:"Warrior Brown", h:"#5a1521"},
+  {b:"MTN 94", c:"RV-64", n:"Respect Pink", h:"#b59892"},
+  {b:"MTN 94", c:"RV-201", n:"Scarlet Brown", h:"#8e6061"},
+  {b:"MTN 94", c:"RV-202", n:"Mosquito Brown", h:"#684445"},
+  {b:"MTN 94", c:"RV-321", n:"April Violet", h:"#f0e0ed"},
+  {b:"MTN 94", c:"RV-195", n:"Shiva Violet", h:"#e5cce1"},
+  {b:"MTN 94", c:"RV-322", n:"Arlet Violet", h:"#d6bbd8"},
+  {b:"MTN 94", c:"RV-170", n:"Persia Violet", h:"#c4a7d2"},
+  {b:"MTN 94", c:"RV-323", n:"Mandala Violet", h:"#bc90c1"},
+  {b:"MTN 94", c:"RV-276", n:"Bishop Violet", h:"#a572b1"},
+  {b:"MTN 94", c:"RV-275", n:"Raval Violet", h:"#94679c"},
+  {b:"MTN 94", c:"RV-283", n:"Sultan Violet", h:"#764077"},
+  {b:"MTN 94", c:"RV-274", n:"Reverend Violet", h:"#623371"},
+  {b:"MTN 94", c:"RV-310", n:"Republic Violet", h:"#dacbe5"},
+  {b:"MTN 94", c:"RV-311", n:"Woodstock Violet", h:"#cdc3e1"},
+
+  /* ---------- MTN Hardcore (Montana Colors) – echte Werte: mtn-shop.de + kuratiert ---------- */
+  {b:"MTN Hardcore", c:"", n:"Chrome Silver", h:"#dbe4eb"},
+  {b:"MTN Hardcore", c:"", n:"Copper", h:"#723e1e"},
+  {b:"MTN Hardcore", c:"", n:"Gold", h:"#d4af37"},
+  {b:"MTN Hardcore", c:"RV-252", n:"Unicorn Yellow", h:"#ffffbf"},
+  {b:"MTN Hardcore", c:"RV-222", n:"Beach Yellow", h:"#fff386"},
+  {b:"MTN Hardcore", c:"RV-7", n:"Cream", h:"#fed792"},
+  {b:"MTN Hardcore", c:"RV-20", n:"Party Yellow", h:"#fff048"},
+  {b:"MTN Hardcore", c:"RV-1021", n:"Light Yellow", h:"#ffe100"},
+  {b:"MTN Hardcore", c:"RV-239", n:"Luxor Yellow", h:"#ffbf0f"},
+  {b:"MTN Hardcore", c:"RV-11", n:"Ganges Yellow", h:"#d49e16"},
+  {b:"MTN Hardcore", c:"RV-206", n:"Atacama Yellow", h:"#fbcb8c"},
+  {b:"MTN Hardcore", c:"RV-1017", n:"Peach", h:"#f9ba57"},
+  {b:"MTN Hardcore", c:"RV-1028", n:"Medium Yellow", h:"#f6a800"},
+  {b:"MTN Hardcore", c:"RV-207", n:"Mango", h:"#e77a19"},
+  {b:"MTN Hardcore", c:"RV-8023", n:"Mustard", h:"#b9501a"},
+  {b:"MTN Hardcore", c:"RV-261", n:"Pangea Brown", h:"#933b00"},
+  {b:"MTN Hardcore", c:"RV-18", n:"Rust Red", h:"#6d2601"},
+  {b:"MTN Hardcore", c:"RV-9", n:"Apricot", h:"#fac294"},
+  {b:"MTN Hardcore", c:"RV-208", n:"Pumpkin", h:"#f6ad6b"},
+  {b:"MTN Hardcore", c:"RV-2003", n:"Pastel Orange", h:"#ec753b"},
+  {b:"MTN Hardcore", c:"RV-2004", n:"Orange", h:"#e95e0f"},
+  {b:"MTN Hardcore", c:"RV-209", n:"Calcutta Orange", h:"#dc4126"},
+  {b:"MTN Hardcore", c:"RV-210", n:"Prometheus Orange", h:"#910e14"},
+  {b:"MTN Hardcore", c:"RV-260", n:"Iroko Red", h:"#5e0000"},
+  {b:"MTN Hardcore", c:"RV-259", n:"Flamingo", h:"#ff958e"},
+  {b:"MTN Hardcore", c:"RV-33", n:"Colorado Red", h:"#e74f45"},
+  {b:"MTN Hardcore", c:"RV-3020", n:"Light Red", h:"#e5352d"},
+  {b:"MTN Hardcore", c:"RV-3001", n:"Vivid Red", h:"#c90019"},
+  {b:"MTN Hardcore", c:"RV-241", n:"Madrid Red", h:"#e5352d"},
+  {b:"MTN Hardcore", c:"RV-242", n:"Soviet Red", h:"#8d0000"},
+  {b:"MTN Hardcore", c:"RV-3004", n:"Bordeaux Red", h:"#82131d"},
+  {b:"MTN Hardcore", c:"RV-348", n:"Alice Pink", h:"#f4adc5"},
+  {b:"MTN Hardcore", c:"RV-258", n:"Manga Pink", h:"#ffa2ca"},
+  {b:"MTN Hardcore", c:"RV-211", n:"Love Pink", h:"#ee87ad"},
+  {b:"MTN Hardcore", c:"RV-4003", n:"Erika", h:"#de336b"},
+  {b:"MTN Hardcore", c:"RV-4010", n:"Magenta", h:"#dd1d5a"},
+  {b:"MTN Hardcore", c:"RV-212", n:"Akari Red", h:"#c50041"},
+  {b:"MTN Hardcore", c:"RV-213", n:"Merlot Red", h:"#762a3d"},
+  {b:"MTN Hardcore", c:"RV-349", n:"Treze Violet", h:"#f6b8d0"},
+  {b:"MTN Hardcore", c:"RV-257", n:"Princess Violet", h:"#ca87b6"},
+  {b:"MTN Hardcore", c:"RV-224", n:"Witch Violet", h:"#c8739f"},
+  {b:"MTN Hardcore", c:"RV-225", n:"Geisha Violet", h:"#c15c92"},
+  {b:"MTN Hardcore", c:"RV-350", n:"Pure Purple", h:"#8f154b"},
+  {b:"MTN Hardcore", c:"RV-226", n:"Tube Violet", h:"#7c3f60"},
+  {b:"MTN Hardcore", c:"RV-4007", n:"Cherry", h:"#582741"},
+  {b:"MTN Hardcore", c:"RV-256", n:"Malva", h:"#aca6d1"},
+  {b:"MTN Hardcore", c:"RV-214", n:"Violet", h:"#9993c3"},
+  {b:"MTN Hardcore", c:"RV-215", n:"Prophet Violet", h:"#6d63a5"},
+  {b:"MTN Hardcore", c:"RV-3", n:"Blue Violet", h:"#574a96"},
+  {b:"MTN Hardcore", c:"RV-216", n:"Anonymous Violet", h:"#45347a"},
+  {b:"MTN Hardcore", c:"RV-264", n:"Galaxy Violet", h:"#2f2280"},
+  {b:"MTN Hardcore", c:"RV-27", n:"Vampire Violet", h:"#2a1e48"},
+  {b:"MTN Hardcore", c:"RV-73", n:"Aurora Blue", h:"#c8d3ed"},
+  {b:"MTN Hardcore", c:"RV-351", n:"Hortensia Blue", h:"#889ed1"},
+  {b:"MTN Hardcore", c:"RV-352", n:"Gala Blue", h:"#5d78ba"},
+  {b:"MTN Hardcore", c:"RV-353", n:"Julione Blue", h:"#40549f"},
+  {b:"MTN Hardcore", c:"RV-243", n:"Babylon Blue", h:"#374d8b"},
+  {b:"MTN Hardcore", c:"RV-32", n:"Lewis Blue", h:"#213a8f"},
+  {b:"MTN Hardcore", c:"RV-354", n:"Universe Blue", h:"#0f2354"},
+  {b:"MTN Hardcore", c:"RV-74", n:"Costa Brava Blue", h:"#94bfe5"},
+  {b:"MTN Hardcore", c:"RV-227", n:"Waimea Blue", h:"#6f9fd0"},
+  {b:"MTN Hardcore", c:"RV-228", n:"Zeppelin Blue", h:"#4875b3"},
+  {b:"MTN Hardcore", c:"RV-229", n:"Andromeda Blue", h:"#465499"},
+  {b:"MTN Hardcore", c:"RV-5002", n:"Ultramarine Blue", h:"#102775"},
+  {b:"MTN Hardcore", c:"RV-230", n:"Leviathan Blue", h:"#0d0f49"},
+  {b:"MTN Hardcore", c:"RV-75", n:"Nostromo Blue", h:"#020e37"},
+  {b:"MTN Hardcore", c:"RV-13", n:"Himalayan Blue", h:"#96d7e9"},
+  {b:"MTN Hardcore", c:"RV-29", n:"Arctic Blue", h:"#6bdcff"},
+  {b:"MTN Hardcore", c:"RV-8", n:"Light Blue", h:"#2abeef"},
+  {b:"MTN Hardcore", c:"RV-217", n:"Avatar Blue", h:"#00a2dd"},
+  {b:"MTN Hardcore", c:"RV-30", n:"Electric Blue", h:"#007fc4"},
+  {b:"MTN Hardcore", c:"RV-5005", n:"Dark Blue", h:"#00659d"},
+  {b:"MTN Hardcore", c:"RV-218", n:"Neptune Blue", h:"#004578"},
+  {b:"MTN Hardcore", c:"RV-355", n:"Fukushima Blue", h:"#8ecfd3"},
+  {b:"MTN Hardcore", c:"RV-255", n:"Patagonia Blue", h:"#83ccdf"},
+  {b:"MTN Hardcore", c:"RV-231", n:"Cousteau Blue", h:"#1bb2c4"},
+  {b:"MTN Hardcore", c:"RV-232", n:"Glacier Blue", h:"#009cab"},
+  {b:"MTN Hardcore", c:"RV-14", n:"Planet Blue", h:"#008098"},
+  {b:"MTN Hardcore", c:"RV-233", n:"Christiania Blue", h:"#006675"},
+  {b:"MTN Hardcore", c:"RV-234", n:"Indigo Blue", h:"#004750"},
+  {b:"MTN Hardcore", c:"RV-356", n:"Vintage Blue", h:"#97d2d0"},
+  {b:"MTN Hardcore", c:"RV-357", n:"Iceberg Blue", h:"#6ec3bf"},
+  {b:"MTN Hardcore", c:"RV-358", n:"Nenufar Blue", h:"#60b3ac"},
+  {b:"MTN Hardcore", c:"RV-359", n:"Mururoa Blue", h:"#008c8d"},
+  {b:"MTN Hardcore", c:"RV-5021", n:"Caribbean Blue", h:"#007f80"},
+  {b:"MTN Hardcore", c:"RV-360", n:"Major Blue", h:"#1f6363"},
+  {b:"MTN Hardcore", c:"RV-5020", n:"Ocean Blue", h:"#00454e"},
+  {b:"MTN Hardcore", c:"RV-361", n:"Potosi Green", h:"#b3dfd2"},
+  {b:"MTN Hardcore", c:"RV-254", n:"Max Green", h:"#9fe5c2"},
+  {b:"MTN Hardcore", c:"RV-9010", n:"White", h:"#F8F8F5"},
+  {b:"MTN Hardcore", c:"RV-7040", n:"Pearl Grey", h:"#B8BAB9"},
+  {b:"MTN Hardcore", c:"RV-7011", n:"Iron Grey", h:"#5A5E62"},
+  {b:"MTN Hardcore", c:"RV-9011", n:"Black", h:"#171819"},
+  {b:"MTN Hardcore", c:"RV-203", n:"Violet", h:"#5E2A84"},
+  {b:"MTN Hardcore", c:"RV-5015", n:"Sky Blue", h:"#0096D6"},
+  {b:"MTN Hardcore", c:"RV-6024", n:"Green", h:"#1E9E52"},
+  {b:"MTN Hardcore", c:"RV-6018", n:"Yellow Green", h:"#8CBE3F"},
+  {b:"MTN Hardcore", c:"RV-6004", n:"Dark Green", h:"#0F5C38"},
+  {b:"MTN Hardcore", c:"RV-8017", n:"Dark Brown", h:"#463024"},
+  {b:"MTN Hardcore", c:"RV-1015", n:"Cream", h:"#EBDDBE"},
+  {b:"MTN Hardcore", c:"RV-5012", n:"Light Blue", h:"#5CB6E0"},
+
+  /* ---------- MOLOTOW PREMIUM (Vollsortiment, Quelle: belton-sass Datensatz) ---------- */
+  {b:"Molotow Premium", c:"", n:"Jasmin Yellow", h:"#f6eb61"},
+  {b:"Molotow Premium", c:"", n:"Zinc Yellow", h:"#fedb00"},
+  {b:"Molotow Premium", c:"", n:"Cadmium Yellow", h:"#ffcd00"},
+  {b:"Molotow Premium", c:"", n:"Signal Yellow", h:"#ffb81c"},
+  {b:"Molotow Premium", c:"", n:"Nature White", h:"#f1e6b2"},
+  {b:"Molotow Premium", c:"", n:"Vanilla", h:"#f8e08e"},
+  {b:"Molotow Premium", c:"", n:"Cashmere Yellow", h:"#f9e547"},
+  {b:"Molotow Premium", c:"", n:"Quince", h:"#fdd757"},
+  {b:"Molotow Premium", c:"", n:"Golden Yellow", h:"#ffb81c"},
+  {b:"Molotow Premium", c:"", n:"Melon Yellow", h:"#ffc72c"},
+  {b:"Molotow Premium", c:"", n:"Light Orange", h:"#ff8f1c"},
+  {b:"Molotow Premium", c:"", n:"Pastel Orange", h:"#ff7f32"},
+  {b:"Molotow Premium", c:"", n:"DARE Orange Light", h:"#ff6a39"},
+  {b:"Molotow Premium", c:"", n:"DARE Orange", h:"#e35205"},
+  {b:"Molotow Premium", c:"", n:"LINDA Sunset", h:"#cf4520"},
+  {b:"Molotow Premium", c:"", n:"SWET100 Traffic Red", h:"#ef3340"},
+  {b:"Molotow Premium", c:"", n:"Tornado Red", h:"#a6192e"},
+  {b:"Molotow Premium", c:"", n:"Ruby Red", h:"#862633"},
+  {b:"Molotow Premium", c:"", n:"Burgundy", h:"#a4123f"},
+  {b:"Molotow Premium", c:"", n:"Garnet", h:"#572932"},
+  {b:"Molotow Premium", c:"", n:"Black Red", h:"#3f2021"},
+  {b:"Molotow Premium", c:"", n:"LOOMIT Aubergine", h:"#4b384c"},
+  {b:"Molotow Premium", c:"", n:"Peach Pastel", h:"#ffbe9f"},
+  {b:"Molotow Premium", c:"", n:"Peach Light", h:"#ffa06a"},
+  {b:"Molotow Premium", c:"", n:"Peach", h:"#ffb990"},
+  {b:"Molotow Premium", c:"", n:"Goldfish", h:"#eca154"},
+  {b:"Molotow Premium", c:"", n:"Lobster Light", h:"#ff7f41"},
+  {b:"Molotow Premium", c:"", n:"Lobster Middle", h:"#e35205"},
+  {b:"Molotow Premium", c:"", n:"Lobster", h:"#dc4405"},
+  {b:"Molotow Premium", c:"", n:"Vermillion", h:"#e04e39"},
+  {b:"Molotow Premium", c:"", n:"Shock Orange", h:"#e03c31"},
+  {b:"Molotow Premium", c:"", n:"MADC Cherry Red", h:"#cb333b"},
+  {b:"Molotow Premium", c:"", n:"Signal Red", h:"#ba0c2f"},
+  {b:"Molotow Premium", c:"", n:"Apricot", h:"#ff9d6e"},
+  {b:"Molotow Premium", c:"", n:"Salmon Orange", h:"#e8927c"},
+  {b:"Molotow Premium", c:"", n:"Autumn Leaf", h:"#a65523"},
+  {b:"Molotow Premium", c:"", n:"LOOMIT Apricot Pastel", h:"#ffb3ab"},
+  {b:"Molotow Premium", c:"", n:"LOOMIT Apricot Middle", h:"#e56a54"},
+  {b:"Molotow Premium", c:"", n:"LOOMIT Apricot", h:"#e04e39"},
+  {b:"Molotow Premium", c:"", n:"Strawberry Red", h:"#ff808b"},
+  {b:"Molotow Premium", c:"", n:"Pussy Pink", h:"#d25b73"},
+  {b:"Molotow Premium", c:"", n:"Raspberry Red", h:"#a6093d"},
+  {b:"Molotow Premium", c:"", n:"Sangria", h:"#861f41"},
+  {b:"Molotow Premium", c:"", n:"Grapefruit", h:"#ffb1bb"},
+  {b:"Molotow Premium", c:"", n:"Mauve Light", h:"#d7a3ab"},
+  {b:"Molotow Premium", c:"", n:"Mauve", h:"#c48490"},
+  {b:"Molotow Premium", c:"", n:"Antique Pink Middle", h:"#cca1a6"},
+  {b:"Molotow Premium", c:"", n:"Antique Pink", h:"#9c6169"},
+  {b:"Molotow Premium", c:"", n:"Piglet Pink Light", h:"#ecc7cd"},
+  {b:"Molotow Premium", c:"", n:"Piglet Pink", h:"#f4a6d7"},
+  {b:"Molotow Premium", c:"", n:"Candy", h:"#ef95cf"},
+  {b:"Molotow Premium", c:"", n:"Lipstick", h:"#c6579a"},
+  {b:"Molotow Premium", c:"", n:"Purple", h:"#80225f"},
+  {b:"Molotow Premium", c:"", n:"ESHER Dirty Red", h:"#612141"},
+  {b:"Molotow Premium", c:"", n:"TILT Bubble Pink", h:"#ef95cf"},
+  {b:"Molotow Premium", c:"", n:"Fuchsia Pink", h:"#e277cd"},
+  {b:"Molotow Premium", c:"", n:"MADC Psycho Pink", h:"#eb6fbd"},
+  {b:"Molotow Premium", c:"", n:"Telemagenta", h:"#ac145a"},
+  {b:"Molotow Premium", c:"", n:"Amaranth Red", h:"#890c58"},
+  {b:"Molotow Premium", c:"", n:"MA Crew Purple", h:"#833177"},
+  {b:"Molotow Premium", c:"", n:"Purple Violet", h:"#512a44"},
+  {b:"Molotow Premium", c:"", n:"Crocus", h:"#d7c6e6"},
+  {b:"Molotow Premium", c:"", n:"Lavender", h:"#b4b5df"},
+  {b:"Molotow Premium", c:"", n:"Lilac", h:"#ad96dc"},
+  {b:"Molotow Premium", c:"", n:"Grape", h:"#9063cd"},
+  {b:"Molotow Premium", c:"", n:"Blackberry", h:"#7d55c7"},
+  {b:"Molotow Premium", c:"", n:"Currant", h:"#500778"},
+  {b:"Molotow Premium", c:"", n:"Violet Dark", h:"#2e1a47"},
+  {b:"Molotow Premium", c:"", n:"Black Violet", h:"#2e1a47"},
+  {b:"Molotow Premium", c:"", n:"Viola Pastel", h:"#bdc5db"},
+  {b:"Molotow Premium", c:"", n:"Viola", h:"#606eb2"},
+  {b:"Molotow Premium", c:"", n:"Viola Dark", h:"#485cc7"},
+  {b:"Molotow Premium", c:"", n:"Night SEEN Blue", h:"#001871"},
+  {b:"Molotow Premium", c:"", n:"Grape Middle", h:"#485cc7"},
+  {b:"Molotow Premium", c:"", n:"Grape Dark", h:"#685bc7"},
+  {b:"Molotow Premium", c:"", n:"Purple Velvet", h:"#2e008b"},
+  {b:"Molotow Premium", c:"", n:"Light Violet", h:"#9595d2"},
+  {b:"Molotow Premium", c:"", n:"Plum Middle", h:"#8d89a5"},
+  {b:"Molotow Premium", c:"", n:"Plum", h:"#595478"},
+  {b:"Molotow Premium", c:"", n:"Pigeon Blue Middle", h:"#b1c9e8"},
+  {b:"Molotow Premium", c:"", n:"Pigeon Blue", h:"#7ba4db"},
+  {b:"Molotow Premium", c:"", n:"Blueberry Light", h:"#5c88da"},
+  {b:"Molotow Premium", c:"", n:"Azure Blue Light", h:"#b9d9eb"},
+  {b:"Molotow Premium", c:"", n:"Azure Blue", h:"#9bcbeb"},
+  {b:"Molotow Premium", c:"", n:"Shock Blue Pastel", h:"#8dc8e8"},
+  {b:"Molotow Premium", c:"", n:"Shock Blue Light", h:"#5bc2e7"},
+  {b:"Molotow Premium", c:"", n:"Shock Blue Middle", h:"#4298b5"},
+  {b:"Molotow Premium", c:"", n:"Shock Blue", h:"#0086bf"},
+  {b:"Molotow Premium", c:"", n:"Tulip Blue Light", h:"#0072ce"},
+  {b:"Molotow Premium", c:"", n:"Tulip Blue Middle", h:"#0057b8"},
+  {b:"Molotow Premium", c:"", n:"Tulip Blue", h:"#005eb8"},
+  {b:"Molotow Premium", c:"", n:"Light Blue", h:"#00a3e0"},
+  {b:"Molotow Premium", c:"", n:"Ceramic Pastel", h:"#62b5e5"},
+  {b:"Molotow Premium", c:"", n:"Jeans Blue", h:"#007dba"},
+  {b:"Molotow Premium", c:"", n:"Navy Blue", h:"#3a5dae"},
+  {b:"Molotow Premium", c:"", n:"Sapphire Blue", h:"#00205b"},
+  {b:"Molotow Premium", c:"", n:"Indigo", h:"#002a3a"},
+  {b:"Molotow Premium", c:"", n:"ECB Prussian Blue Dark", h:"#002a3a"},
+  {b:"Molotow Premium", c:"", n:"Petrol", h:"#003b5c"},
+  {b:"Molotow Premium", c:"", n:"Deep-Sea Blue", h:"#002a3a"},
+  {b:"Molotow Premium", c:"", n:"Deep-Sea Blue Dark", h:"#00263e"},
+  {b:"Molotow Premium", c:"", n:"Ice-Blue Dark", h:"#9bd3dd"},
+  {b:"Molotow Premium", c:"", n:"Dolphin Blue", h:"#3eb1c8"},
+  {b:"Molotow Premium", c:"", n:"Cream Blue", h:"#59cbe8"},
+  {b:"Molotow Premium", c:"", n:"Olympia Blue", h:"#00c1d5"},
+  {b:"Molotow Premium", c:"", n:"Aqua", h:"#007fa3"},
+  {b:"Molotow Premium", c:"", n:"Alga", h:"#007fa3"},
+  {b:"Molotow Premium", c:"", n:"Baby Blue", h:"#b8dde1"},
+  {b:"Molotow Premium", c:"", n:"Crystal Blue Dark", h:"#77c5d5"},
+  {b:"Molotow Premium", c:"", n:"Blue Gin", h:"#4f868e"},
+  {b:"Molotow Premium", c:"", n:"Verdigris", h:"#007681"},
+  {b:"Molotow Premium", c:"", n:"Caribbean", h:"#d1e0d7"},
+  {b:"Molotow Premium", c:"", n:"Riviera Pastel", h:"#8ce2d0"},
+  {b:"Molotow Premium", c:"", n:"Riviera Light", h:"#64ccc9"},
+  {b:"Molotow Premium", c:"", n:"Riviera Middle", h:"#2ad2c9"},
+  {b:"Molotow Premium", c:"", n:"Riviera Dark", h:"#279989"},
+  {b:"Molotow Premium", c:"", n:"Lagoon Blue", h:"#00b2a9"},
+  {b:"Molotow Premium", c:"", n:"MARTHA Marine", h:"#007377"},
+  {b:"Molotow Premium", c:"", n:"Turquoise Dark", h:"#115740"},
+  {b:"Molotow Premium", c:"", n:"Nori", h:"#004851"},
+  {b:"Molotow Premium", c:"", n:"Black Turquoise", h:"#003b49"},
+  {b:"Molotow Premium", c:"", n:"Gale Green", h:"#a3b2a4"},
+  {b:"Molotow Premium", c:"", n:"Reed", h:"#9ab9ad"},
+  {b:"Molotow Premium", c:"", n:"Aquamarine", h:"#b9dcd2"},
+  {b:"Molotow Premium", c:"", n:"Swamp", h:"#43695b"},
+  {b:"Molotow Premium", c:"", n:"Black Forest Green", h:"#3e5d58"},
+  {b:"Molotow Premium", c:"", n:"Blueberry Pastel", h:"#b1e4e3"},
+  {b:"Molotow Premium", c:"", n:"Calypso Light", h:"#d1e0d7"},
+  {b:"Molotow Premium", c:"", n:"Calypso Middle", h:"#2cd5c4"},
+  {b:"Molotow Premium", c:"", n:"Calypso Dark", h:"#71cc98"},
+  {b:"Molotow Premium", c:"", n:"Turquoise Green", h:"#00af66"},
+  {b:"Molotow Premium", c:"", n:"Turquoise Green Middle", h:"#007a53"},
+  {b:"Molotow Premium", c:"", n:"SEAK Future Green", h:"#154734"},
+  {b:"Molotow Premium", c:"", n:"Menthol Light", h:"#9be3bf"},
+  {b:"Molotow Premium", c:"", n:"Menthol", h:"#80e0a7"},
+  {b:"Molotow Premium", c:"", n:"KACAO77 Green", h:"#26d07c"},
+  {b:"Molotow Premium", c:"", n:"Kiwi Pastel", h:"#f0ec74"},
+  {b:"Molotow Premium", c:"", n:"Kiwi Light", h:"#c4d600"},
+  {b:"Molotow Premium", c:"", n:"Kiwi", h:"#84bd00"},
+  {b:"Molotow Premium", c:"", n:"Dandelion", h:"#c5e86c"},
+  {b:"Molotow Premium", c:"", n:"Brilliant Green", h:"#a4d65e"},
+  {b:"Molotow Premium", c:"", n:"Grasshopper", h:"#78be20"},
+  {b:"Molotow Premium", c:"", n:"Cream Green", h:"#8edd65"},
+  {b:"Molotow Premium", c:"", n:"Hippie Green", h:"#a1d884"},
+  {b:"Molotow Premium", c:"", n:"Wasabi", h:"#78d64b"},
+  {b:"Molotow Premium", c:"", n:"Cliff Green", h:"#6cc24a"},
+  {b:"Molotow Premium", c:"", n:"Clover Green", h:"#43b02a"},
+  {b:"Molotow Premium", c:"", n:"Juice Green", h:"#c2e189"},
+  {b:"Molotow Premium", c:"", n:"Mister Green", h:"#007a33"},
+  {b:"Molotow Premium", c:"", n:"Leaf Green", h:"#275d38"},
+  {b:"Molotow Premium", c:"", n:"MIGHTY Green", h:"#8f993e"},
+  {b:"Molotow Premium", c:"", n:"Avocado", h:"#789d4a"},
+  {b:"Molotow Premium", c:"", n:"Fern Green", h:"#67823a"},
+  {b:"Molotow Premium", c:"", n:"Moss Green", h:"#2c5234"},
+  {b:"Molotow Premium", c:"", n:"Chromium Oxide Green", h:"#5b6236"},
+  {b:"Molotow Premium", c:"", n:"Butterfly Green", h:"#e9ec6b"},
+  {b:"Molotow Premium", c:"", n:"Green Tea", h:"#c4d6a4"},
+  {b:"Molotow Premium", c:"", n:"PJAY Green", h:"#a3aa83"},
+  {b:"Molotow Premium", c:"", n:"Amazonas", h:"#5773cc"},
+  {b:"Molotow Premium", c:"", n:"Camouflage", h:"#594a25"},
+  {b:"Molotow Premium", c:"", n:"Evil Olive", h:"#4a412a"},
+  {b:"Molotow Premium", c:"", n:"Poison Green", h:"#c4d600"},
+  {b:"Molotow Premium", c:"", n:"Apple", h:"#bfb800"},
+  {b:"Molotow Premium", c:"", n:"Sorbet Green", h:"#e9df97"},
+  {b:"Molotow Premium", c:"", n:"Soft Pastel", h:"#e9df97"},
+  {b:"Molotow Premium", c:"", n:"Carambola", h:"#dbde70"},
+  {b:"Molotow Premium", c:"", n:"Hemp", h:"#ac9f3c"},
+  {b:"Molotow Premium", c:"", n:"Green Bean", h:"#8f993e"},
+  {b:"Molotow Premium", c:"", n:"Pear", h:"#949300"},
+  {b:"Molotow Premium", c:"", n:"Mustard", h:"#d9c756"},
+  {b:"Molotow Premium", c:"", n:"Khaki", h:"#ad841f"},
+  {b:"Molotow Premium", c:"", n:"Ivory Light", h:"#dbc8b6"},
+  {b:"Molotow Premium", c:"", n:"Milk Coffee", h:"#ceb888"},
+  {b:"Molotow Premium", c:"", n:"Mocca", h:"#5c462b"},
+  {b:"Molotow Premium", c:"", n:"Sahara Beige Light", h:"#f5e1a4"},
+  {b:"Molotow Premium", c:"", n:"Sahara Beige Middle", h:"#fdd086"},
+  {b:"Molotow Premium", c:"", n:"Sahara Beige", h:"#ecd898"},
+  {b:"Molotow Premium", c:"", n:"Papyrus", h:"#cda077"},
+  {b:"Molotow Premium", c:"", n:"Nougat", h:"#b9975b"},
+  {b:"Molotow Premium", c:"", n:"Beige Brown", h:"#9a6a4f"},
+  {b:"Molotow Premium", c:"", n:"Apricot Beige", h:"#fcd299"},
+  {b:"Molotow Premium", c:"", n:"Labrador", h:"#fcc89b"},
+  {b:"Molotow Premium", c:"", n:"Ocher Brown", h:"#996017"},
+  {b:"Molotow Premium", c:"", n:"Orange Brown Light", h:"#eed484"},
+  {b:"Molotow Premium", c:"", n:"Orange Brown Middle", h:"#c88242"},
+  {b:"Molotow Premium", c:"", n:"Orange Brown", h:"#996017"},
+  {b:"Molotow Premium", c:"", n:"Cocoa Light", h:"#ab5c57"},
+  {b:"Molotow Premium", c:"", n:"Cocoa Middle", h:"#9c6169"},
+  {b:"Molotow Premium", c:"", n:"Cocoa", h:"#6a3735"},
+  {b:"Molotow Premium", c:"", n:"Caramel", h:"#ad7c59"},
+  {b:"Molotow Premium", c:"", n:"Walnut", h:"#7c4d3a"},
+  {b:"Molotow Premium", c:"", n:"Hazelnut", h:"#693f23"},
+  {b:"Molotow Premium", c:"", n:"Chocolate Brown", h:"#4e3629"},
+  {b:"Molotow Premium", c:"", n:"CMP Dark Brown", h:"#473729"},
+  {b:"Molotow Premium", c:"", n:"Tar Black", h:"#373a36"},
+  {b:"Molotow Premium", c:"", n:"Stone Grey Dark", h:"#65665c"},
+  {b:"Molotow Premium", c:"", n:"Stone Grey Middle", h:"#7e7f74"},
+  {b:"Molotow Premium", c:"", n:"Stone Grey Light", h:"#babbb1"},
+  {b:"Molotow Premium", c:"", n:"TOAST Signal Black", h:"#25282a"},
+  {b:"Molotow Premium", c:"", n:"Middle Grey Neutral", h:"#9ea2a2"},
+  {b:"Molotow Premium", c:"", n:"Light Grey Neutral", h:"#c4bfb6"},
+  {b:"Molotow Premium", c:"", n:"Mouse Grey", h:"#707372"},
+  {b:"Molotow Premium", c:"", n:"Silver Dollar", h:"#887777"},
+  {b:"Molotow Premium", c:"", n:"Black Grey Dark", h:"#25282a"},
+  {b:"Molotow Premium", c:"", n:"Anthracite Grey", h:"#5b6770"},
+  {b:"Molotow Premium", c:"", n:"Grey Blue Dark", h:"#707372"},
+  {b:"Molotow Premium", c:"", n:"Granite", h:"#7c878e"},
+  {b:"Molotow Premium", c:"", n:"Grey Blue Middle", h:"#898d8d"},
+  {b:"Molotow Premium", c:"", n:"Rock Grey", h:"#a2aaad"},
+  {b:"Molotow Premium", c:"", n:"Grey Blue Light", h:"#c1c6c8"},
+  {b:"Molotow Premium", c:"", n:"Pebble Grey", h:"#d0d3d4"},
+  {b:"Molotow Premium", c:"", n:"Neon Yellow", h:"#ffe900"},
+  {b:"Molotow Premium", c:"", n:"Neon Orange", h:"#ffaa4d"},
+  {b:"Molotow Premium", c:"", n:"Neon Pink", h:"#ff3eb5"},
+  {b:"Molotow Premium", c:"", n:"Neon Blue", h:"#009ace"},
+  {b:"Molotow Premium", c:"", n:"Neon Green", h:"#44d62c"},
+
+  /* ---------- LOOP COLORS – echte Werte aus offizieller Farbtafel 2026 (PDF, OCR-Codes) ---------- */
+  {b:"Loop Colors", c:"LP-100", n:"White Matt", h:"#ffffff"},
+  {b:"Loop Colors", c:"LP-101", n:"White Gloss", h:"#ffffff"},
+  {b:"Loop Colors", c:"LP-103", n:"Black Matt", h:"#000307"},
+  {b:"Loop Colors", c:"LP-104", n:"Black", h:"#000000"},
+  {b:"Loop Colors", c:"LP-105", n:"Black Gloss", h:"#000000"},
+  {b:"Loop Colors", c:"LP-106", n:"Madrid", h:"#fff68d"},
+  {b:"Loop Colors", c:"LP-107", n:"Barcelona", h:"#fff36d"},
+  {b:"Loop Colors", c:"LP-108", n:"Valencia", h:"#ffd600"},
+  {b:"Loop Colors", c:"LP-109", n:"Sevilla", h:"#fdb714"},
+  {b:"Loop Colors", c:"LP-110", n:"Malaga", h:"#fbac3b"},
+  {b:"Loop Colors", c:"LP-120", n:"Amsterdam", h:"#f99e49"},
+  {b:"Loop Colors", c:"LP-121", n:"Haarlem", h:"#f68d39"},
+  {b:"Loop Colors", c:"LP-122", n:"Utrecht", h:"#de771c"},
+  {b:"Loop Colors", c:"LP-123", n:"Rotterdam", h:"#a93e11"},
+  {b:"Loop Colors", c:"LP-124", n:"Eindhoven", h:"#fed9b0"},
+  {b:"Loop Colors", c:"LP-125", n:"Breda", h:"#f9a65f"},
+  {b:"Loop Colors", c:"LP-126", n:"Helmond", h:"#f79149"},
+  {b:"Loop Colors", c:"LP-127", n:"Rosendhal", h:"#f5821f"},
+  {b:"Loop Colors", c:"LP-128", n:"Arnhem", h:"#f47720"},
+  {b:"Loop Colors", c:"LP-129", n:"Tilburg", h:"#f26721"},
+  {b:"Loop Colors", c:"LP-130", n:"Oss", h:"#f15522"},
+  {b:"Loop Colors", c:"LP-131", n:"Brussels", h:"#c55e18"},
+  {b:"Loop Colors", c:"LP-136", n:"Manchester", h:"#ea3729"},
+  {b:"Loop Colors", c:"LP-137", n:"Liverpool", h:"#cd2f2d"},
+  {b:"Loop Colors", c:"LP-138", n:"Newcastle", h:"#b42c33"},
+  {b:"Loop Colors", c:"LP-139", n:"York", h:"#ae132a"},
+  {b:"Loop Colors", c:"LP-140", n:"Leeds", h:"#940416"},
+  {b:"Loop Colors", c:"LP-141", n:"Cambridge", h:"#611d17"},
+  {b:"Loop Colors", c:"LP-142", n:"Derby", h:"#f26662"},
+  {b:"Loop Colors", c:"LP-143", n:"Bristol", h:"#e34241"},
+  {b:"Loop Colors", c:"LP-144", n:"Brighton", h:"#ce1c33"},
+  {b:"Loop Colors", c:"LP-145", n:"Oxford", h:"#6a0632"},
+  {b:"Loop Colors", c:"LP-146", n:"London", h:"#570025"},
+  {b:"Loop Colors", c:"LP-147", n:"Birmingham", h:"#f7a1a4"},
+  {b:"Loop Colors", c:"LP-148", n:"Nottingham", h:"#f47f72"},
+  {b:"Loop Colors", c:"LP-149", n:"Warsaw", h:"#b3025b"},
+  {b:"Loop Colors", c:"LP-150", n:"Dublin", h:"#f3e3e0"},
+  {b:"Loop Colors", c:"LP-151", n:"Galway", h:"#f1c7c0"},
+  {b:"Loop Colors", c:"LP-152", n:"Dundalk", h:"#f6a2b7"},
+  {b:"Loop Colors", c:"LP-153", n:"Waterford", h:"#83003f"},
+  {b:"Loop Colors", c:"LP-154", n:"Limerick", h:"#f8bac4"},
+  {b:"Loop Colors", c:"LP-155", n:"Swords", h:"#e19cbc"},
+  {b:"Loop Colors", c:"LP-156", n:"Cork", h:"#69081e"},
+  {b:"Loop Colors", c:"LP-157", n:"Sligo", h:"#cd7d95"},
+  {b:"Loop Colors", c:"LP-158", n:"Faro", h:"#f3adcd"},
+  {b:"Loop Colors", c:"LP-159", n:"Beja", h:"#f199c1"},
+  {b:"Loop Colors", c:"LP-160", n:"Coimbra", h:"#ce509d"},
+  {b:"Loop Colors", c:"LP-161", n:"Porto", h:"#b80e7a"},
+  {b:"Loop Colors", c:"LP-162", n:"Amadora", h:"#8e005b"},
+  {b:"Loop Colors", c:"LP-163", n:"Lisboa", h:"#620e36"},
+  {b:"Loop Colors", c:"LP-164", n:"Thessaloniki", h:"#70004b"},
+  {b:"Loop Colors", c:"LP-165", n:"Leicester", h:"#3c000e"},
+  {b:"Loop Colors", c:"LP-180", n:"Vilnius", h:"#beb1d7"},
+  {b:"Loop Colors", c:"LP-181", n:"Kalmar", h:"#a698c9"},
+  {b:"Loop Colors", c:"LP-182", n:"Malmo", h:"#9285bf"},
+  {b:"Loop Colors", c:"LP-183", n:"Goteberg", h:"#766db2"},
+  {b:"Loop Colors", c:"LP-184", n:"Mora", h:"#4d439b"},
+  {b:"Loop Colors", c:"LP-185", n:"Falun", h:"#2e155f"},
+  {b:"Loop Colors", c:"LP-186", n:"Stockholm", h:"#f6dfec"},
+  {b:"Loop Colors", c:"LP-187", n:"Helsinki", h:"#d3b6d7"},
+  {b:"Loop Colors", c:"LP-188", n:"Oulu", h:"#b282b9"},
+  {b:"Loop Colors", c:"LP-189", n:"Oslo", h:"#a76aac"},
+  {b:"Loop Colors", c:"LP-190", n:"Copenhagen", h:"#470759"},
+  {b:"Loop Colors", c:"LP-191", n:"Moss", h:"#66489d"},
+  {b:"Loop Colors", c:"LP-192", n:"Skagen", h:"#501f46"},
+  {b:"Loop Colors", c:"LP-193", n:"Riga", h:"#6b3263"},
+  {b:"Loop Colors", c:"LP-194", n:"Tallinn", h:"#502c8d"},
+  {b:"Loop Colors", c:"LP-195", n:"Odense", h:"#290d53"},
+  {b:"Loop Colors", c:"LP-199", n:"Monaco", h:"#7ed3f5"},
+  {b:"Loop Colors", c:"LP-200", n:"Paris", h:"#bbdbe3"},
+  {b:"Loop Colors", c:"LP-201", n:"Nancy", h:"#96c8d6"},
+  {b:"Loop Colors", c:"LP-202", n:"Strasbourg", h:"#51b9e9"},
+  {b:"Loop Colors", c:"LP-203", n:"Metz", h:"#029dda"},
+  {b:"Loop Colors", c:"LP-204", n:"Lens", h:"#008cd1"},
+  {b:"Loop Colors", c:"LP-205", n:"Lille", h:"#0066a7"},
+  {b:"Loop Colors", c:"LP-206", n:"Rennes", h:"#00558e"},
+  {b:"Loop Colors", c:"LP-207", n:"Calais", h:"#003f6d"},
+  {b:"Loop Colors", c:"LP-208", n:"Brest", h:"#002e56"},
+  {b:"Loop Colors", c:"LP-209", n:"Bordeaux", h:"#c7d9e5"},
+  {b:"Loop Colors", c:"LP-210", n:"Nantes", h:"#81b7d6"},
+  {b:"Loop Colors", c:"LP-211", n:"Grenobles", h:"#5794b5"},
+  {b:"Loop Colors", c:"LP-212", n:"Lyon", h:"#003c58"},
+  {b:"Loop Colors", c:"LP-213", n:"Marseille", h:"#bbdcf1"},
+  {b:"Loop Colors", c:"LP-214", n:"Nimes", h:"#90c5ea"},
+  {b:"Loop Colors", c:"LP-215", n:"Montpellier", h:"#569dcb"},
+  {b:"Loop Colors", c:"LP-216", n:"Toulouse", h:"#096c97"},
+  {b:"Loop Colors", c:"LP-217", n:"Nice", h:"#004278"},
+  {b:"Loop Colors", c:"LP-218", n:"Ajaccio", h:"#001541"},
+  {b:"Loop Colors", c:"LP-219", n:"Taverny", h:"#026093"},
+  {b:"Loop Colors", c:"LP-220", n:"Geneva", h:"#005a7c"},
+  {b:"Loop Colors", c:"LP-221", n:"Basel", h:"#0f3985"},
+  {b:"Loop Colors", c:"LP-222", n:"Athens", h:"#004054"},
+  {b:"Loop Colors", c:"LP-223", n:"Limassol", h:"#0f2c3f"},
+  {b:"Loop Colors", c:"LP-224", n:"Perpignan", h:"#00173b"},
+  {b:"Loop Colors", c:"LP-248", n:"San Marino", h:"#004855"},
+  {b:"Loop Colors", c:"LP-249", n:"Como", h:"#94d6dc"},
+  {b:"Loop Colors", c:"LP-250", n:"Torino", h:"#c1e6e9"},
+  {b:"Loop Colors", c:"LP-251", n:"Milano", h:"#5ac6cc"},
+  {b:"Loop Colors", c:"LP-252", n:"Bergamo", h:"#00aab8"},
+  {b:"Loop Colors", c:"LP-253", n:"Brescia", h:"#0098a0"},
+  {b:"Loop Colors", c:"LP-254", n:"Venezia", h:"#005d71"},
+  {b:"Loop Colors", c:"LP-255", n:"Bolzano", h:"#003035"},
+  {b:"Loop Colors", c:"LP-256", n:"Piacenza", h:"#cbe8d9"},
+  {b:"Loop Colors", c:"LP-257", n:"Parma", h:"#a7d8bb"},
+  {b:"Loop Colors", c:"LP-258", n:"Modena", h:"#27b67a"},
+  {b:"Loop Colors", c:"LP-259", n:"Reggio Emilia", h:"#148a5e"},
+  {b:"Loop Colors", c:"LP-260", n:"Bologna", h:"#006f38"},
+  {b:"Loop Colors", c:"LP-261", n:"Ferrara", h:"#004023"},
+  {b:"Loop Colors", c:"LP-262", n:"La Spezia", h:"#c6e09f"},
+  {b:"Loop Colors", c:"LP-263", n:"Pisa", h:"#aad69c"},
+  {b:"Loop Colors", c:"LP-264", n:"Prato", h:"#85c191"},
+  {b:"Loop Colors", c:"LP-265", n:"Lucca", h:"#569860"},
+  {b:"Loop Colors", c:"LP-266", n:"Firenze", h:"#007933"},
+  {b:"Loop Colors", c:"LP-267", n:"Siena", h:"#2b7239"},
+  {b:"Loop Colors", c:"LP-268", n:"Livorno", h:"#135f23"},
+  {b:"Loop Colors", c:"LP-269", n:"Perugia", h:"#02460e"},
+  {b:"Loop Colors", c:"LP-270", n:"Sassari", h:"#dae9de"},
+  {b:"Loop Colors", c:"LP-271", n:"Cagliari", h:"#bbdbcf"},
+  {b:"Loop Colors", c:"LP-272", n:"Messina", h:"#70a195"},
+  {b:"Loop Colors", c:"LP-273", n:"Catania", h:"#003f35"},
+  {b:"Loop Colors", c:"LP-274", n:"Palermo", h:"#003227"},
+  {b:"Loop Colors", c:"LP-275", n:"Roma", h:"#e4eb9c"},
+  {b:"Loop Colors", c:"LP-276", n:"Morimondo", h:"#e3e985"},
+  {b:"Loop Colors", c:"LP-277", n:"Napoli", h:"#cbdb2f"},
+  {b:"Loop Colors", c:"LP-278", n:"Salerno", h:"#a2b527"},
+  {b:"Loop Colors", c:"LP-279", n:"Foggia", h:"#8a951e"},
+  {b:"Loop Colors", c:"LP-280", n:"Bari", h:"#6b6b17"},
+  {b:"Loop Colors", c:"LP-281", n:"Catanzaro", h:"#495d20"},
+  {b:"Loop Colors", c:"LP-282", n:"Rimini", h:"#002d11"},
+  {b:"Loop Colors", c:"LP-283", n:"Lecce", h:"#3b4e22"},
+  {b:"Loop Colors", c:"LP-298", n:"Tiriana", h:"#54420c"},
+  {b:"Loop Colors", c:"LP-299", n:"Istanbul", h:"#cabe08"},
+  {b:"Loop Colors", c:"LP-300", n:"Zagreb", h:"#f8f6ba"},
+  {b:"Loop Colors", c:"LP-301", n:"Bratislava", h:"#f5e98b"},
+  {b:"Loop Colors", c:"LP-302", n:"Bucarest", h:"#dfd471"},
+  {b:"Loop Colors", c:"LP-303", n:"Budapest", h:"#a88a12"},
+  {b:"Loop Colors", c:"LP-304", n:"Praga", h:"#927a0c"},
+  {b:"Loop Colors", c:"LP-305", n:"Belgrade", h:"#52531f"},
+  {b:"Loop Colors", c:"LP-306", n:"Vienna", h:"#f2e7c1"},
+  {b:"Loop Colors", c:"LP-307", n:"Krems", h:"#dcc699"},
+  {b:"Loop Colors", c:"LP-308", n:"Linz", h:"#caaa77"},
+  {b:"Loop Colors", c:"LP-309", n:"Wels", h:"#765316"},
+  {b:"Loop Colors", c:"LP-310", n:"Salzburg", h:"#4b351d"},
+  {b:"Loop Colors", c:"LP-311", n:"Graz", h:"#3d350a"},
+  {b:"Loop Colors", c:"LP-312", n:"Baden", h:"#3c1605"},
+  {b:"Loop Colors", c:"LP-313", n:"Berlin", h:"#f6d8b6"},
+  {b:"Loop Colors", c:"LP-314", n:"Hamburg", h:"#f7c39b"},
+  {b:"Loop Colors", c:"LP-315", n:"Bremen", h:"#f0ac7b"},
+  {b:"Loop Colors", c:"LP-316", n:"Hannover", h:"#bf6a1f"},
+  {b:"Loop Colors", c:"LP-317", n:"Dortmund", h:"#93450e"},
+  {b:"Loop Colors", c:"LP-318", n:"Halle", h:"#633c13"},
+  {b:"Loop Colors", c:"LP-319", n:"Munchen", h:"#fcf5cb"},
+  {b:"Loop Colors", c:"LP-320", n:"Stuttgart", h:"#d4ad8c"},
+  {b:"Loop Colors", c:"LP-321", n:"Nurnberg", h:"#a6714d"},
+  {b:"Loop Colors", c:"LP-322", n:"Mainz", h:"#6e3400"},
+  {b:"Loop Colors", c:"LP-323", n:"Frankfurt", h:"#56341f"},
+  {b:"Loop Colors", c:"LP-324", n:"Bonn", h:"#46312b"},
+  {b:"Loop Colors", c:"LP-325", n:"Koln", h:"#441600"},
+  {b:"Loop Colors", c:"LP-326", n:"Leipzig", h:"#db8759"},
+  {b:"Loop Colors", c:"LP-327", n:"Innsbruck", h:"#ab8952"},
+  {b:"Loop Colors", c:"LP-328", n:"Duesseldorf", h:"#4e2400"},
+  {b:"Loop Colors", c:"LP-329", n:"Bern", h:"#855a39"},
+  {b:"Loop Colors", c:"LP-330", n:"Zurich", h:"#bf7748"},
+  {b:"Loop Colors", c:"LP-340", n:"Los Angeles", h:"#d8dddd"},
+  {b:"Loop Colors", c:"LP-341", n:"San Diego", h:"#c6ced3"},
+  {b:"Loop Colors", c:"LP-342", n:"San Jose", h:"#a1abb3"},
+  {b:"Loop Colors", c:"LP-343", n:"San Francisco", h:"#72808b"},
+  {b:"Loop Colors", c:"LP-344", n:"Oakland", h:"#4f5a66"},
+  {b:"Loop Colors", c:"LP-345", n:"Sacramento", h:"#383945"},
+  {b:"Loop Colors", c:"LP-346", n:"Long Beach", h:"#04091d"},
+  {b:"Loop Colors", c:"LP-347", n:"Houston", h:"#d5c9c8"},
+  {b:"Loop Colors", c:"LP-348", n:"San Antonio", h:"#a896a0"},
+  {b:"Loop Colors", c:"LP-349", n:"Dallas", h:"#7c646e"},
+  {b:"Loop Colors", c:"LP-350", n:"Austin", h:"#5d4852"},
+  {b:"Loop Colors", c:"LP-351", n:"El Paso", h:"#38272d"},
+  {b:"Loop Colors", c:"LP-352", n:"New York", h:"#cfd4e2"},
+  {b:"Loop Colors", c:"LP-353", n:"Boston", h:"#c1c3d8"},
+  {b:"Loop Colors", c:"LP-354", n:"Chicago", h:"#a6a9c5"},
+  {b:"Loop Colors", c:"LP-355", n:"Philly", h:"#494b7d"},
+  {b:"Loop Colors", c:"LP-356", n:"Washington", h:"#2a2d5a"},
+  {b:"Loop Colors", c:"LP-357", n:"Miami", h:"#d7d5d0"},
+  {b:"Loop Colors", c:"LP-358", n:"Orlando", h:"#acaba7"},
+  {b:"Loop Colors", c:"LP-359", n:"Tampa", h:"#858482"},
+  {b:"Loop Colors", c:"LP-360", n:"Jacksonville", h:"#63686a"},
+  {b:"Loop Colors", c:"LP-361", n:"Key West", h:"#484b48"},
+  {b:"Loop Colors", c:"LP-362", n:"Fort Myers", h:"#333535"},
+  {b:"Loop Colors", c:"LP-363", n:"Seattle", h:"#cec6c1"},
+  {b:"Loop Colors", c:"LP-364", n:"Portland", h:"#938483"},
+  {b:"Loop Colors", c:"LP-365", n:"Las Vegas", h:"#79686a"},
+  {b:"Loop Colors", c:"LP-366", n:"Detroit", h:"#5d4e4e"},
+  {b:"Loop Colors", c:"LP-367", n:"Baltimore", h:"#463135"},
+  {b:"Loop Colors", c:"LP-368", n:"Indianapolis", h:"#7e7ea5"},
+  {b:"Loop Colors", c:"LP-370", n:"Melbourne", h:"#f8c1ae"},
+  {b:"Loop Colors", c:"LP-371", n:"Sidney", h:"#d9a395"},
+  {b:"Loop Colors", c:"LP-372", n:"Brisbane", h:"#ca9282"},
+  {b:"Loop Colors", c:"LP-373", n:"Christchurch", h:"#ae837c"},
+  {b:"Loop Colors", c:"LP-374", n:"Wellington", h:"#834e48"},
+  {b:"Loop Colors", c:"LP-375", n:"Moscow", h:"#f79c87"},
+  {b:"Loop Colors", c:"LP-376", n:"St. Petersburg", h:"#f58b70"},
+  {b:"Loop Colors", c:"LP-377", n:"Krasnodar", h:"#f37049"},
+  {b:"Loop Colors", c:"LP-378", n:"Dubai", h:"#7ec67f"},
+  {b:"Loop Colors", c:"LP-379", n:"Sao Paulo", h:"#0c5cab"},
+  {b:"Loop Colors", c:"LP-380", n:"Santiago", h:"#ef5299"},
+  {b:"Loop Colors", c:"LP-409", n:"Fluo Blue", h:"#00aeef"},
+  {b:"Loop Colors", c:"LP-410", n:"Fluo Yellow", h:"#fff200"},
+  {b:"Loop Colors", c:"LP-411", n:"Fluo Orange", h:"#f68b1e"},
+  {b:"Loop Colors", c:"LP-412", n:"Fluo Red", h:"#ef4023"},
+  {b:"Loop Colors", c:"LP-413", n:"Fluo Pink", h:"#ed1651"},
+  {b:"Loop Colors", c:"LP-414", n:"Fluo Green", h:"#4fb848"},
+  {b:"Loop Colors", c:"LP-416", n:"Maxi Black", h:"#231f20"},
+  {b:"Loop Colors", c:"LP-417", n:"Maxi Valencia", h:"#ffd600"},
+  {b:"Loop Colors", c:"LP-418", n:"Maxi Rosendhal", h:"#f5821f"},
+  {b:"Loop Colors", c:"LP-419", n:"Maxi Liverpool", h:"#cd2f2d"},
+  {b:"Loop Colors", c:"LP-420", n:"Maxi Dundalk", h:"#f6a2b7"},
+  {b:"Loop Colors", c:"LP-421", n:"Maxi Porto", h:"#b80e7a"},
+  {b:"Loop Colors", c:"LP-422", n:"Maxi Mora", h:"#4d439b"},
+  {b:"Loop Colors", c:"LP-423", n:"Maxi Lens", h:"#008cd1"},
+  {b:"Loop Colors", c:"LP-424", n:"Maxi Lucca", h:"#569860"},
+  {b:"Loop Colors", c:"LP-425", n:"Maxi Brest", h:"#002e56"},
+  {b:"Loop Colors", c:"LP-426", n:"Maxi Leeds", h:"#940416"},
+  {b:"Loop Colors", c:"LP-427", n:"Maxi Perugia", h:"#02460e"},
+  {b:"Loop Colors", c:"LP-428", n:"Maxi Malmo", h:"#9285bf"},
+  {b:"Loop Colors", c:"LP-429", n:"Maxi Bergamo", h:"#00aab8"},
+  {b:"Loop Colors", c:"LP-433", n:"Maxi Madrid", h:"#fff68d"},
+  {b:"Loop Colors", c:"LP-434", n:"Maxi San Francisco", h:"#72808b"},
+  {b:"Loop Colors", c:"LP-435", n:"Maxi Black Asphalt", h:"#333132"},
+  {b:"Loop Colors", c:"LP-438", n:"Black Asphalt", h:"#231f20"},
+  {b:"Loop Colors", c:"LP-442", n:"Maxi Tilburg", h:"#f26721"},
+  {b:"Loop Colors", c:"LP-443", n:"Maxi Moss", h:"#66489d"},
+  {b:"Loop Colors", c:"LP-444", n:"Maxi Venezia", h:"#005d71"},
+  {b:"Loop Colors", c:"LP-445", n:"Maxi Firenze", h:"#007933"},
+  {b:"Loop Colors", c:"LP-446", n:"Maxi Sacramento", h:"#383945"},
+  {b:"Loop Colors", c:"LP-450", n:"Metallized Black", h:"#7ed3f5"},
+  {b:"Loop Colors", c:"LP-460", n:"White Extreme Primer", h:"#ffffff"},
+  {b:"Loop Colors", c:"LP-500", n:"Neon Green", h:"#f2f6d5"},
+  /* ---------- MOLOTOW FLAME ORANGE – echte Werte aus offiziellem Klappflyer (PDF) ---------- */
+  {b:"Molotow FLAME Orange", c:"FO-100", n:"vanilla", h:"#f1e082"},
+  {b:"Molotow FLAME Orange", c:"FO-102", n:"zinc yellow", h:"#ffde3d"},
+  {b:"Molotow FLAME Orange", c:"FO-104", n:"cadmium yellow", h:"#fbd824"},
+  {b:"Molotow FLAME Orange", c:"FO-106", n:"signal yellow", h:"#f5cd0c"},
+  {b:"Molotow FLAME Orange", c:"FO-107", n:"melon light", h:"#fab513"},
+  {b:"Molotow FLAME Orange", c:"FO-110", n:"melon yellow", h:"#f7bb16"},
+  {b:"Molotow FLAME Orange", c:"FO-111", n:"melon dark", h:"#f7ac09"},
+  {b:"Molotow FLAME Orange", c:"FO-113", n:"curry", h:"#f59d19"},
+  {b:"Molotow FLAME Orange", c:"FO-200", n:"peach", h:"#f8b576"},
+  {b:"Molotow FLAME Orange", c:"FO-202", n:"pastel orange", h:"#f28d28"},
+  {b:"Molotow FLAME Orange", c:"FO-204", n:"light orange", h:"#eb7106"},
+  {b:"Molotow FLAME Orange", c:"FO-205", n:"peach dark", h:"#f39678"},
+  {b:"Molotow FLAME Orange", c:"FO-208", n:"skin", h:"#f1d6b7"},
+  {b:"Molotow FLAME Orange", c:"FO-210", n:"apricot", h:"#f18649"},
+  {b:"Molotow FLAME Orange", c:"FO-214", n:"red orange", h:"#d2431b"},
+  {b:"Molotow FLAME Orange", c:"FO-304", n:"signal red", h:"#d83532"},
+  {b:"Molotow FLAME Orange", c:"FO-306", n:"ruby red", h:"#8c2d2d"},
+  {b:"Molotow FLAME Orange", c:"FO-307", n:"coral", h:"#e86865"},
+  {b:"Molotow FLAME Orange", c:"FO-308", n:"piglet pink light", h:"#ef9cb0"},
+  {b:"Molotow FLAME Orange", c:"FO-310", n:"piglet pink", h:"#e94362"},
+  {b:"Molotow FLAME Orange", c:"FO-311", n:"crazy cherry", h:"#bb243a"},
+  {b:"Molotow FLAME Orange", c:"FO-312", n:"fire red", h:"#c13733"},
+  {b:"Molotow FLAME Orange", c:"FO-313", n:"cherry dark", h:"#9c0e30"},
+  {b:"Molotow FLAME Orange", c:"FO-318", n:"traffic purple dark", h:"#48233c"},
+  {b:"Molotow FLAME Orange", c:"FO-322", n:"aubergine", h:"#523437"},
+  {b:"Molotow FLAME Orange", c:"FO-396", n:"violet", h:"#9f5d9c"},
+  {b:"Molotow FLAME Orange", c:"FO-397", n:"crazy violet", h:"#81477c"},
+  {b:"Molotow FLAME Orange", c:"FO-398", n:"deep violet", h:"#694679"},
+  {b:"Molotow FLAME Orange", c:"FO-399", n:"erica violet light", h:"#dda7c7"},
+  {b:"Molotow FLAME Orange", c:"FO-400", n:"erica violet", h:"#dd6b9c"},
+  {b:"Molotow FLAME Orange", c:"FO-401", n:"erica pastel", h:"#e1becc"},
+  {b:"Molotow FLAME Orange", c:"FO-402", n:"telemagenta", h:"#d8356e"},
+  {b:"Molotow FLAME Orange", c:"FO-404", n:"traffic purple", h:"#8b1878"},
+  {b:"Molotow FLAME Orange", c:"FO-408", n:"grape", h:"#9567a3"},
+  {b:"Molotow FLAME Orange", c:"FO-410", n:"blackberry", h:"#6d447c"},
+  {b:"Molotow FLAME Orange", c:"FO-412", n:"currant", h:"#503259"},
+  {b:"Molotow FLAME Orange", c:"FO-416", n:"viola light", h:"#bab4da"},
+  {b:"Molotow FLAME Orange", c:"FO-418", n:"viola", h:"#6466a5"},
+  {b:"Molotow FLAME Orange", c:"FO-420", n:"viola dark", h:"#343a81"},
+  {b:"Molotow FLAME Orange", c:"FO-424", n:"cosmos blue light", h:"#7278b8"},
+  {b:"Molotow FLAME Orange", c:"FO-426", n:"cosmos blue", h:"#414999"},
+  {b:"Molotow FLAME Orange", c:"FO-428", n:"cosmos blue dark", h:"#2f2c6a"},
+  {b:"Molotow FLAME Orange", c:"FO-502", n:"lighting blue", h:"#6fc7e7"},
+  {b:"Molotow FLAME Orange", c:"FO-504", n:"light blue light", h:"#93c6e5"},
+  {b:"Molotow FLAME Orange", c:"FO-508", n:"light blue", h:"#4597d1"},
+  {b:"Molotow FLAME Orange", c:"FO-510", n:"sky blue", h:"#0f6eb5"},
+  {b:"Molotow FLAME Orange", c:"FO-511", n:"crazy blue", h:"#0089c1"},
+  {b:"Molotow FLAME Orange", c:"FO-512", n:"signal blue", h:"#0f5196"},
+  {b:"Molotow FLAME Orange", c:"FO-514", n:"true blue", h:"#224a89"},
+  {b:"Molotow FLAME Orange", c:"FO-515", n:"ultramarine blue", h:"#1f2c5c"},
+  {b:"Molotow FLAME Orange", c:"FO-522", n:"sapphire blue", h:"#142d59"},
+  {b:"Molotow FLAME Orange", c:"FO-531", n:"verdigris light", h:"#8dbab8"},
+  {b:"Molotow FLAME Orange", c:"FO-532", n:"verdigris middle", h:"#7ca6a5"},
+  {b:"Molotow FLAME Orange", c:"FO-533", n:"verdigris", h:"#688e8f"},
+  {b:"Molotow FLAME Orange", c:"FO-601", n:"crazy riviera", h:"#48b79e"},
+  {b:"Molotow FLAME Orange", c:"FO-602", n:"riviera", h:"#68c0b4"},
+  {b:"Molotow FLAME Orange", c:"FO-604", n:"lagoon blue", h:"#05a492"},
+  {b:"Molotow FLAME Orange", c:"FO-606", n:"ocean blue", h:"#117375"},
+  {b:"Molotow FLAME Orange", c:"FO-608", n:"sage middle", h:"#97aca1"},
+  {b:"Molotow FLAME Orange", c:"FO-609", n:"sage", h:"#7da590"},
+  {b:"Molotow FLAME Orange", c:"FO-610", n:"sage dark", h:"#527866"},
+  {b:"Molotow FLAME Orange", c:"FO-614", n:"aqua pastel", h:"#91d3eb"},
+  {b:"Molotow FLAME Orange", c:"FO-616", n:"aqua light", h:"#3098bc"},
+  {b:"Molotow FLAME Orange", c:"FO-618", n:"aqua", h:"#006375"},
+  {b:"Molotow FLAME Orange", c:"FO-622", n:"mustard light", h:"#eeba08"},
+  {b:"Molotow FLAME Orange", c:"FO-623", n:"crazy green", h:"#dfdd2e"},
+  {b:"Molotow FLAME Orange", c:"FO-624", n:"pistachio light", h:"#d8d541"},
+  {b:"Molotow FLAME Orange", c:"FO-625", n:"mustard", h:"#c7a223"},
+  {b:"Molotow FLAME Orange", c:"FO-627", n:"crazy grass", h:"#96ba26"},
+  {b:"Molotow FLAME Orange", c:"FO-628", n:"grass green", h:"#8aa846"},
+  {b:"Molotow FLAME Orange", c:"FO-629", n:"juice green", h:"#008e3d"},
+  {b:"Molotow FLAME Orange", c:"FO-631", n:"mustard dark", h:"#a37f13"},
+  {b:"Molotow FLAME Orange", c:"FO-632", n:"leaf green", h:"#4d8647"},
+  {b:"Molotow FLAME Orange", c:"FO-633", n:"khaki green", h:"#846928"},
+  {b:"Molotow FLAME Orange", c:"FO-636", n:"fir green", h:"#2c5c52"},
+  {b:"Molotow FLAME Orange", c:"FO-640", n:"kiwi light", h:"#b8d049"},
+  {b:"Molotow FLAME Orange", c:"FO-642", n:"kiwi", h:"#7dba2e"},
+  {b:"Molotow FLAME Orange", c:"FO-644", n:"kiwi dark", h:"#699321"},
+  {b:"Molotow FLAME Orange", c:"FO-664", n:"menthol light", h:"#92cbac"},
+  {b:"Molotow FLAME Orange", c:"FO-666", n:"menthol", h:"#70bf99"},
+  {b:"Molotow FLAME Orange", c:"FO-667", n:"crazy menthol", h:"#6cb76d"},
+  {b:"Molotow FLAME Orange", c:"FO-672", n:"turquoise", h:"#188b5a"},
+  {b:"Molotow FLAME Orange", c:"FO-697", n:"cocoa light", h:"#d27f79"},
+  {b:"Molotow FLAME Orange", c:"FO-698", n:"cocoa", h:"#9f514c"},
+  {b:"Molotow FLAME Orange", c:"FO-699", n:"brown red", h:"#892626"},
+  {b:"Molotow FLAME Orange", c:"FO-704", n:"beige brown", h:"#c09a5d"},
+  {b:"Molotow FLAME Orange", c:"FO-706", n:"ocher", h:"#9d6930"},
+  {b:"Molotow FLAME Orange", c:"FO-708", n:"nut", h:"#4d2b00"},
+  {b:"Molotow FLAME Orange", c:"FO-732", n:"grey beige light", h:"#b5a486"},
+  {b:"Molotow FLAME Orange", c:"FO-734", n:"grey beige", h:"#a28c63"},
+  {b:"Molotow FLAME Orange", c:"FO-736", n:"khaki grey", h:"#6f5c3a"},
+  {b:"Molotow FLAME Orange", c:"FO-834", n:"light grey neutral", h:"#dad3cd"},
+  {b:"Molotow FLAME Orange", c:"FO-840", n:"dark grey neutral", h:"#86807f"},
+  {b:"Molotow FLAME Orange", c:"FO-844", n:"anthracite grey", h:"#4c4c4f"},
+  {b:"Molotow FLAME Orange", c:"FO-901", n:"thick black", h:"#090909"},
+  {b:"Molotow FLAME Orange", c:"FO-904", n:"deep black", h:"#090909"},
+
+  /* ---------- MOLOTOW FLAME BLUE – echte Werte aus offiziellem Klappflyer (PDF) ---------- */
+  {b:"Molotow FLAME Blue", c:"FB-100", n:"vanilla", h:"#f1e082"},
+  {b:"Molotow FLAME Blue", c:"FB-102", n:"zinc yellow", h:"#ffde3d"},
+  {b:"Molotow FLAME Blue", c:"FB-104", n:"cadmium yellow", h:"#fbd824"},
+  {b:"Molotow FLAME Blue", c:"FB-106", n:"signal yellow", h:"#f5cd0c"},
+  {b:"Molotow FLAME Blue", c:"FB-110", n:"melon yellow", h:"#f7bb16"},
+  {b:"Molotow FLAME Blue", c:"FB-112", n:"saffron", h:"#f7ac34"},
+  {b:"Molotow FLAME Blue", c:"FB-114", n:"dahlia", h:"#eba033"},
+  {b:"Molotow FLAME Blue", c:"FB-200", n:"peach", h:"#f8b576"},
+  {b:"Molotow FLAME Blue", c:"FB-202", n:"pastel orange", h:"#f28d28"},
+  {b:"Molotow FLAME Blue", c:"FB-204", n:"light orange", h:"#eb7106"},
+  {b:"Molotow FLAME Blue", c:"FB-208", n:"skin", h:"#f1d6b7"},
+  {b:"Molotow FLAME Blue", c:"FB-210", n:"apricot", h:"#f18649"},
+  {b:"Molotow FLAME Blue", c:"FB-214", n:"red orange", h:"#d2431b"},
+  {b:"Molotow FLAME Blue", c:"FB-304", n:"signal red", h:"#d83532"},
+  {b:"Molotow FLAME Blue", c:"FB-306", n:"ruby red", h:"#8c2d2d"},
+  {b:"Molotow FLAME Blue", c:"FB-308", n:"piglet pink light", h:"#ef9cb0"},
+  {b:"Molotow FLAME Blue", c:"FB-310", n:"piglet pink", h:"#e94362"},
+  {b:"Molotow FLAME Blue", c:"FB-311", n:"crazy cherry", h:"#bb2139"},
+  {b:"Molotow FLAME Blue", c:"FB-312", n:"fire red", h:"#c13733"},
+  {b:"Molotow FLAME Blue", c:"FB-313", n:"cherry dark", h:"#9c1830"},
+  {b:"Molotow FLAME Blue", c:"FB-318", n:"traffic purple dark", h:"#3d0e3d"},
+  {b:"Molotow FLAME Blue", c:"FB-320", n:"burgundy", h:"#6d1930"},
+  {b:"Molotow FLAME Blue", c:"FB-322", n:"aubergine", h:"#523437"},
+  {b:"Molotow FLAME Blue", c:"FB-399", n:"erica light", h:"#d79fc8"},
+  {b:"Molotow FLAME Blue", c:"FB-400", n:"erica violet", h:"#dd6b9c"},
+  {b:"Molotow FLAME Blue", c:"FB-401", n:"erica pastel", h:"#e1bdcc"},
+  {b:"Molotow FLAME Blue", c:"FB-402", n:"telemagenta", h:"#d8356e"},
+  {b:"Molotow FLAME Blue", c:"FB-404", n:"traffic purple", h:"#8b1878"},
+  {b:"Molotow FLAME Blue", c:"FB-406", n:"lavender", h:"#ccd2eb"},
+  {b:"Molotow FLAME Blue", c:"FB-408", n:"grape", h:"#9567a3"},
+  {b:"Molotow FLAME Blue", c:"FB-410", n:"blackberry", h:"#6d447c"},
+  {b:"Molotow FLAME Blue", c:"FB-412", n:"currant", h:"#503259"},
+  {b:"Molotow FLAME Blue", c:"FB-414", n:"viola pastel", h:"#c6ceea"},
+  {b:"Molotow FLAME Blue", c:"FB-416", n:"viola light", h:"#bab4da"},
+  {b:"Molotow FLAME Blue", c:"FB-418", n:"viola", h:"#6466a5"},
+  {b:"Molotow FLAME Blue", c:"FB-420", n:"viola dark", h:"#343a81"},
+  {b:"Molotow FLAME Blue", c:"FB-424", n:"cosmos blue light", h:"#7278b8"},
+  {b:"Molotow FLAME Blue", c:"FB-426", n:"cosmos blue", h:"#414999"},
+  {b:"Molotow FLAME Blue", c:"FB-428", n:"cosmos blue dark", h:"#2f2c6a"},
+  {b:"Molotow FLAME Blue", c:"FB-502", n:"lighting blue", h:"#add5ee"},
+  {b:"Molotow FLAME Blue", c:"FB-504", n:"light blue light", h:"#93c6e5"},
+  {b:"Molotow FLAME Blue", c:"FB-508", n:"light blue", h:"#4597d1"},
+  {b:"Molotow FLAME Blue", c:"FB-510", n:"sky blue", h:"#0f6eb5"},
+  {b:"Molotow FLAME Blue", c:"FB-512", n:"signal blue", h:"#0f5196"},
+  {b:"Molotow FLAME Blue", c:"FB-514", n:"true blue", h:"#224a89"},
+  {b:"Molotow FLAME Blue", c:"FB-516", n:"cream blue light", h:"#81a8c4"},
+  {b:"Molotow FLAME Blue", c:"FB-518", n:"cream blue", h:"#2686c6"},
+  {b:"Molotow FLAME Blue", c:"FB-520", n:"cream blue dark", h:"#125d8f"},
+  {b:"Molotow FLAME Blue", c:"FB-522", n:"sapphire blue", h:"#142d59"},
+  {b:"Molotow FLAME Blue", c:"FB-524", n:"denim blue pastel", h:"#b5d1ef"},
+  {b:"Molotow FLAME Blue", c:"FB-526", n:"denim blue light", h:"#92c3e5"},
+  {b:"Molotow FLAME Blue", c:"FB-528", n:"denim blue", h:"#5089b2"},
+  {b:"Molotow FLAME Blue", c:"FB-530", n:"denim blue dark", h:"#3f5a6f"},
+  {b:"Molotow FLAME Blue", c:"FB-600", n:"riviera light", h:"#b1dde3"},
+  {b:"Molotow FLAME Blue", c:"FB-602", n:"riviera", h:"#68c0b4"},
+  {b:"Molotow FLAME Blue", c:"FB-604", n:"lagoon blue", h:"#05a492"},
+  {b:"Molotow FLAME Blue", c:"FB-606", n:"ocean blue", h:"#117375"},
+  {b:"Molotow FLAME Blue", c:"FB-614", n:"aqua pastel", h:"#91d3eb"},
+  {b:"Molotow FLAME Blue", c:"FB-616", n:"aqua light", h:"#3098bc"},
+  {b:"Molotow FLAME Blue", c:"FB-618", n:"aqua", h:"#006375"},
+  {b:"Molotow FLAME Blue", c:"FB-620", n:"aqua dark", h:"#0d5651"},
+  {b:"Molotow FLAME Blue", c:"FB-624", n:"pistachio light", h:"#d8d541"},
+  {b:"Molotow FLAME Blue", c:"FB-626", n:"pistachio", h:"#bbc33d"},
+  {b:"Molotow FLAME Blue", c:"FB-628", n:"grass green", h:"#8aa846"},
+  {b:"Molotow FLAME Blue", c:"FB-630", n:"fern green", h:"#6e9848"},
+  {b:"Molotow FLAME Blue", c:"FB-632", n:"leaf green", h:"#4d8647"},
+  {b:"Molotow FLAME Blue", c:"FB-634", n:"moss green", h:"#317044"},
+  {b:"Molotow FLAME Blue", c:"FB-636", n:"fir green", h:"#2c5c52"},
+  {b:"Molotow FLAME Blue", c:"FB-638", n:"kiwi pastel", h:"#e8e22b"},
+  {b:"Molotow FLAME Blue", c:"FB-640", n:"kiwi light", h:"#b8d049"},
+  {b:"Molotow FLAME Blue", c:"FB-642", n:"kiwi", h:"#7dba2e"},
+  {b:"Molotow FLAME Blue", c:"FB-644", n:"kiwi dark", h:"#699321"},
+  {b:"Molotow FLAME Blue", c:"FB-654", n:"primavera green", h:"#c2d989"},
+  {b:"Molotow FLAME Blue", c:"FB-656", n:"tarzan green", h:"#93b279"},
+  {b:"Molotow FLAME Blue", c:"FB-658", n:"camo green", h:"#737450"},
+  {b:"Molotow FLAME Blue", c:"FB-660", n:"olive", h:"#23382e"},
+  {b:"Molotow FLAME Blue", c:"FB-662", n:"menthol pastel", h:"#c1debc"},
+  {b:"Molotow FLAME Blue", c:"FB-664", n:"menthol light", h:"#92cbac"},
+  {b:"Molotow FLAME Blue", c:"FB-666", n:"menthol", h:"#70bf99"},
+  {b:"Molotow FLAME Blue", c:"FB-668", n:"menthol dark", h:"#15463a"},
+  {b:"Molotow FLAME Blue", c:"FB-670", n:"turquoise light", h:"#25a37d"},
+  {b:"Molotow FLAME Blue", c:"FB-672", n:"turquoise", h:"#188b5a"},
+  {b:"Molotow FLAME Blue", c:"FB-674", n:"turquoise dark", h:"#276245"},
+  {b:"Molotow FLAME Blue", c:"FB-702", n:"ivory light", h:"#ede0b7"},
+  {b:"Molotow FLAME Blue", c:"FB-704", n:"beige brown", h:"#c09a5d"},
+  {b:"Molotow FLAME Blue", c:"FB-706", n:"ocher", h:"#9d6930"},
+  {b:"Molotow FLAME Blue", c:"FB-708", n:"nut", h:"#4d2b00"},
+  {b:"Molotow FLAME Blue", c:"FB-710", n:"chocolate", h:"#2d170d"},
+  {b:"Molotow FLAME Blue", c:"FB-716", n:"skin light", h:"#f6e4d4"},
+  {b:"Molotow FLAME Blue", c:"FB-717", n:"skin middle", h:"#d6caa0"},
+  {b:"Molotow FLAME Blue", c:"FB-718", n:"character beige", h:"#e6c3ac"},
+  {b:"Molotow FLAME Blue", c:"FB-719", n:"character brown", h:"#a08677"},
+  {b:"Molotow FLAME Blue", c:"FB-732", n:"grey beige light", h:"#b5a486"},
+  {b:"Molotow FLAME Blue", c:"FB-734", n:"grey beige", h:"#a28c63"},
+  {b:"Molotow FLAME Blue", c:"FB-736", n:"khaki grey", h:"#6f5c3a"},
+  {b:"Molotow FLAME Blue", c:"FB-738", n:"dark brown terracotta grey", h:"#3e3327"},
+  {b:"Molotow FLAME Blue", c:"FB-808", n:"terracotta grey pastel", h:"#c9b9b4"},
+  {b:"Molotow FLAME Blue", c:"FB-810", n:"terracotta grey light", h:"#a88b8a"},
+  {b:"Molotow FLAME Blue", c:"FB-812", n:"terracotta grey", h:"#826b6c"},
+  {b:"Molotow FLAME Blue", c:"FB-820", n:"violet grey middle", h:"#6a5e6c"},
+  {b:"Molotow FLAME Blue", c:"FB-822", n:"violet grey", h:"#574b5c"},
+  {b:"Molotow FLAME Blue", c:"FB-834", n:"light grey neutral", h:"#dad3cd"},
+  {b:"Molotow FLAME Blue", c:"FB-838", n:"grey neutral", h:"#808081"},
+  {b:"Molotow FLAME Blue", c:"FB-840", n:"dark grey neutral anthracite grey", h:"#86807f"},
+  {b:"Molotow FLAME Blue", c:"FB-842", n:"anthracite grey middle", h:"#525250"},
+  {b:"Molotow FLAME Blue", c:"FB-844", n:"anthracite grey anthracite grey", h:"#4c4c4f"},
+  {b:"Molotow FLAME Blue", c:"FB-846", n:"anthracite grey dark", h:"#363636"},
+  {b:"Molotow FLAME Blue", c:"FB-900", n:"pure white", h:"#ffffff"},
+  {b:"Molotow FLAME Blue", c:"FB-904", n:"deep black", h:"#090909"},
+  {b:"Molotow FLAME Blue", c:"FB-1000", n:"fluo yellow", h:"#f6e700"},
+  {b:"Molotow FLAME Blue", c:"FB-1002", n:"fluo orange yellow-black", h:"#ec6608"},
+  {b:"Molotow FLAME Blue", c:"FB-1004", n:"fluo pink", h:"#e50076"},
+  {b:"Molotow FLAME Blue", c:"FB-1006", n:"fluo green", h:"#3aaa35"},
+];
+
+// list of brands in display order
+const BRANDS = ["Montana BLACK","Montana GOLD","MTN 94","MTN Hardcore","Molotow Premium","Molotow FLAME Orange","Molotow FLAME Blue","Loop Colors"];
+
+/* =========================================================================
+   2) FARB-MATHEMATIK  (sRGB -> Lab, Delta-E)
+   ========================================================================= */
+function hexToRgb(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgbToHex(r,g,b){const f=x=>('0'+Math.round(Math.max(0,Math.min(255,x))).toString(16)).slice(-2);return '#'+f(r)+f(g)+f(b);}
+function srgbToLin(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function rgbToLab(r,g,b){
+  const R=srgbToLin(r),G=srgbToLin(g),B=srgbToLin(b);
+  let x=R*0.4124+G*0.3576+B*0.1805;
+  let y=R*0.2126+G*0.7152+B*0.0722;
+  let z=R*0.0193+G*0.1192+B*0.9505;
+  x/=0.95047; z/=1.08883;
+  const f=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
+  const fx=f(x),fy=f(y),fz=f(z);
+  return [116*fy-16, 500*(fx-fy), 200*(fy-fz)];
+}
+function deltaE(a,b){ // CIE76 – schnell und ausreichend für Matching
+  const dl=a[0]-b[0], da=a[1]-b[1], db=a[2]-b[2];
+  return Math.sqrt(dl*dl+da*da+db*db);
+}
+// Lab-Werte aller Farben vorberechnen
+PAINTS.forEach(p=>{const [r,g,b]=hexToRgb(p.h); p.rgb=[r,g,b]; p.lab=rgbToLab(r,g,b);});
+
+/* =========================================================================
+   3) K-MEANS  (dominante Farben finden)
+   ========================================================================= */
+function kmeans(labs, k, iters=14){
+  k=Math.min(k, labs.length);
+  // k-means++ Initialisierung
+  let centers=[ labs[(Math.random()*labs.length)|0].slice() ];
+  while(centers.length<k){
+    const d2=new Array(labs.length);
+    let sum=0;
+    for(let i=0;i<labs.length;i++){
+      let m=Infinity;
+      for(const c of centers){const d=deltaE(labs[i],c); if(d<m)m=d;}
+      d2[i]=m*m; sum+=d2[i];
+    }
+    if(sum===0){centers.push(labs[(Math.random()*labs.length)|0].slice());continue;}
+    let r=Math.random()*sum, idx=labs.length-1;
+    for(let i=0;i<d2.length;i++){r-=d2[i]; if(r<=0){idx=i;break;}}
+    centers.push(labs[idx].slice());
+  }
+  const labels=new Int32Array(labs.length);
+  for(let it=0; it<iters; it++){
+    for(let i=0;i<labs.length;i++){
+      let best=0,bd=Infinity;
+      for(let c=0;c<k;c++){const d=deltaE(labs[i],centers[c]); if(d<bd){bd=d;best=c;}}
+      labels[i]=best;
+    }
+    const acc=Array.from({length:k},()=>[0,0,0,0]);
+    for(let i=0;i<labs.length;i++){const c=labels[i];acc[c][0]+=labs[i][0];acc[c][1]+=labs[i][1];acc[c][2]+=labs[i][2];acc[c][3]++;}
+    for(let c=0;c<k;c++){
+      if(acc[c][3]>0) centers[c]=[acc[c][0]/acc[c][3],acc[c][1]/acc[c][3],acc[c][2]/acc[c][3]];
+      else centers[c]=labs[(Math.random()*labs.length)|0].slice();
+    }
+  }
+  return {centers, labels};
+}
+
+/* =========================================================================
+   4) DOM
+   ========================================================================= */
+const $=id=>document.getElementById(id);
+const fileInput=$('file'), drop=$('drop'), kRange=$('kRange'), kVal=$('kVal');
+const runBtn=$('run'), resetBtn=$('reset'), brandsBox=$('brands');
+const cvOrig=$('cvOrig'), cvPrev=$('cvPrev');
+const placeholder=$('placeholder'), results=$('results');
+const distBar=$('distBar'), rowsBox=$('rows'), shopBox=$('shop'), dlBtn=$('dl');
+
+let IMG=null;          // geladenes Bild
+let DISP={w:0,h:0};    // Anzeigegröße
+let lastAnalyzed=false;
+let CLUSTERS=[];       // aktuelle Farb-Cluster (mit manueller Wahl)
+let ACTIVE=[];         // aktuell ausgewählte Dosen-Palette
+
+// Marken-Checkboxen aufbauen
+const brandCounts={};
+PAINTS.forEach(p=>brandCounts[p.b]=(brandCounts[p.b]||0)+1);
+BRANDS.forEach(b=>{
+  const id='brand_'+b.replace(/\W+/g,'');
+  const lab=document.createElement('label');
+  lab.className='brandChk';
+  lab.innerHTML=`<input type="checkbox" value="${b}" checked id="${id}">
+    <span class="nm">${b}</span><span class="ct">${brandCounts[b]||0} Farben</span>`;
+  brandsBox.appendChild(lab);
+});
+function selectedBrands(){
+  return [...brandsBox.querySelectorAll('input:checked')].map(i=>i.value);
+}
+function activePaints(){
+  const set=new Set(selectedBrands());
+  return PAINTS.filter(p=>set.has(p.b));
+}
+
+/* ---- Bild laden ---- */
+function loadFile(f){
+  if(!f || !f.type.startsWith('image/')) return;
+  const url=URL.createObjectURL(f);
+  const img=new Image();
+  img.onload=()=>{ IMG=img; drawOriginal(); runBtn.disabled=false; resetBtn.classList.remove('hidden'); };
+  img.src=url;
+}
+function drawOriginal(){
+  const maxW=Math.min(520, (results.clientWidth||520));
+  const maxH=480;
+  let w=IMG.naturalWidth, h=IMG.naturalHeight;
+  const s=Math.min(maxW/w, maxH/h, 1);
+  DISP={w:Math.max(1,Math.round(w*s)), h:Math.max(1,Math.round(h*s))};
+  [cvOrig,cvPrev].forEach(cv=>{cv.width=DISP.w; cv.height=DISP.h;});
+  cvOrig.getContext('2d').drawImage(IMG,0,0,DISP.w,DISP.h);
+  const pc=cvPrev.getContext('2d'); pc.clearRect(0,0,DISP.w,DISP.h);
+}
+
+/* ---- Analyse ---- */
+function analyze(){
+  if(!IMG) return;
+  const paints=activePaints();
+  if(paints.length===0){ alert('Bitte mindestens eine Marke auswählen.'); return; }
+  const k=parseInt(kRange.value,10);
+
+  // 1) Downsample für Geschwindigkeit
+  const SAMPLE=160;
+  let w=IMG.naturalWidth, h=IMG.naturalHeight;
+  const s=Math.min(SAMPLE/w, SAMPLE/h, 1);
+  const sw=Math.max(1,Math.round(w*s)), sh=Math.max(1,Math.round(h*s));
+  const off=document.createElement('canvas'); off.width=sw; off.height=sh;
+  const octx=off.getContext('2d',{willReadFrequently:true});
+  octx.drawImage(IMG,0,0,sw,sh);
+  const data=octx.getImageData(0,0,sw,sh).data;
+
+  // 2) Pixel sammeln (transparente überspringen)
+  const px=[], labs=[];
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]<128) continue;
+    const r=data[i],g=data[i+1],b=data[i+2];
+    px.push([r,g,b]); labs.push(rgbToLab(r,g,b));
+  }
+  if(labs.length===0){ alert('Bild enthält keine sichtbaren Pixel.'); return; }
+
+  // 3) Clustering
+  const {centers,labels}=kmeans(labs, k);
+  const K=centers.length;
+
+  // 4) Pro Cluster: mittleres RGB + Pixelanzahl
+  const acc=Array.from({length:K},()=>[0,0,0,0]);
+  for(let i=0;i<px.length;i++){const c=labels[i];acc[c][0]+=px[i][0];acc[c][1]+=px[i][1];acc[c][2]+=px[i][2];acc[c][3]++;}
+  let clusters=[];
+  for(let c=0;c<K;c++){
+    if(acc[c][3]===0) continue;
+    const rgb=[acc[c][0]/acc[c][3], acc[c][1]/acc[c][3], acc[c][2]/acc[c][3]];
+    clusters.push({ rgb, lab:rgbToLab(rgb[0],rgb[1],rgb[2]), count:acc[c][3], centerLab:centers[c] });
+  }
+  const total=clusters.reduce((a,c)=>a+c.count,0);
+
+  // 5) Auto-Vorschlag (nächste Dose zur Bildfarbe) + Standard-Wahl
+  ACTIVE = paints;
+  clusters.forEach(cl=>{
+    cl.pct  = cl.count/total*100;
+    cl.auto = nearestCan(cl.lab).can;   // Empfehlung auf Basis der Originalfarbe
+    cl.chosen = cl.auto.h;              // aktuell gemalte Farbe (manuell überschreibbar)
+  });
+  clusters.sort((a,b)=>b.count-a.count);
+  CLUSTERS = clusters;
+
+  // 6) Alles rendern
+  renderAll();
+
+  placeholder.classList.add('hidden');
+  results.classList.remove('hidden');
+  lastAnalyzed=true;
+}
+
+// nächste Dose (innerhalb der aktiven Marken) zu einer Lab-Farbe
+function nearestCan(lab){
+  let best=null, bd=Infinity;
+  const pool = ACTIVE.length ? ACTIVE : PAINTS;
+  for(const p of pool){const d=deltaE(lab,p.lab); if(d<bd){bd=d;best=p;}}
+  return {can:best, dist:bd};
+}
+const labOf = hex => { const c=hexToRgb(hex); return rgbToLab(c[0],c[1],c[2]); };
+
+function renderAll(){ renderPreview(); renderDist(); renderRows(); renderShop(); renderBigPreview(); }
+
+// jeden Pixel dem Cluster zuordnen und mit der GEWÄHLTEN Farbe füllen
+function renderPreview(){
+  const ctx=cvPrev.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(IMG,0,0,DISP.w,DISP.h);
+  const img=ctx.getImageData(0,0,DISP.w,DISP.h);
+  const d=img.data;
+  const centers=CLUSTERS.map(c=>c.centerLab);
+  const cols=CLUSTERS.map(c=>hexToRgb(c.chosen));
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<128) continue;
+    const lab=rgbToLab(d[i],d[i+1],d[i+2]);
+    let best=0,bd=Infinity;
+    for(let c=0;c<centers.length;c++){const dd=deltaE(lab,centers[c]); if(dd<bd){bd=dd;best=c;}}
+    d[i]=cols[best][0]; d[i+1]=cols[best][1]; d[i+2]=cols[best][2];
+  }
+  ctx.putImageData(img,0,0);
+}
+
+function matchTag(dev){ // dev = Abweichung der gewählten Farbe vom Original
+  if(dev<8)  return '<span class="matchTag m-good">nah am Original</span>';
+  if(dev<18) return '<span class="matchTag m-ok">leicht verändert</span>';
+  return '<span class="matchTag m-far">stark verändert</span>';
+}
+
+function renderDist(){
+  distBar.innerHTML='';
+  CLUSTERS.forEach(cl=>{
+    const can=nearestCan(labOf(cl.chosen)).can;
+    const rgb=hexToRgb(cl.chosen);
+    const lum=0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2];
+    const s=document.createElement('span');
+    s.style.width=cl.pct+'%';
+    s.style.background=cl.chosen;
+    s.style.color = lum>150 ? '#10131a' : '#ffffff';
+    s.title=`${can.b} ${can.n} · ${cl.pct.toFixed(1)}%`;
+    if(cl.pct>=5) s.textContent = cl.pct.toFixed(cl.pct<10?1:0)+'%';
+    distBar.appendChild(s);
+  });
+}
+
+// abgeleitete Werte einer Zeile (nächste Dose zur gewählten Farbe + Abweichung)
+function rowDerived(cl){
+  const chosenLab=labOf(cl.chosen);
+  return { can:nearestCan(chosenLab).can, dev:deltaE(cl.lab, chosenLab) };
+}
+
+function renderRows(){
+  rowsBox.innerHTML='';
+  CLUSTERS.forEach((cl,i)=>{
+    const origHex=rgbToHex(cl.rgb[0],cl.rgb[1],cl.rgb[2]);
+    const {can,dev}=rowDerived(cl);
+    const edited = cl.chosen.toLowerCase()!==cl.auto.h.toLowerCase();
+    const row=document.createElement('div');
+    row.className='row'; row.dataset.ci=i;
+    row.innerHTML=`
+      <div class="swatchPair">
+        <div class="sw" style="background:${origHex}" title="Originalfarbe ${origHex}"></div>
+        <span class="arrow">→</span>
+        <button class="pickBtn" style="background:${cl.chosen}" title="Farbe ändern – Vorschläge öffnen"></button>
+        <button class="resetRow ${edited?'':'hidden'}" title="Auf vorgeschlagene Dose zurücksetzen">↺</button>
+      </div>
+      <div class="meta">
+        <div class="brand">${can.b}</div>
+        <div class="name">${can.n}</div>
+        <div class="code">${can.c?can.c+' · ':''}${cl.chosen.toUpperCase()}</div>
+      </div>
+      <div class="pctWrap">
+        <div class="pctTop"><span class="tagBox">${matchTag(dev)}</span><b>${cl.pct.toFixed(1)}%</b></div>
+        <div class="pctBarBg"><div class="pctBarFg" style="width:${cl.pct}%;background:${cl.chosen}"></div></div>
+      </div>`;
+    rowsBox.appendChild(row);
+  });
+}
+
+// Zeile in-place aktualisieren (ohne DOM neu aufzubauen → Picker bleibt offen)
+function updateRow(row, cl){
+  const {can,dev}=rowDerived(cl);
+  const edited = cl.chosen.toLowerCase()!==cl.auto.h.toLowerCase();
+  row.querySelector('.brand').textContent=can.b;
+  row.querySelector('.name').textContent=can.n;
+  row.querySelector('.code').textContent=can.c+' · '+cl.chosen.toUpperCase();
+  row.querySelector('.tagBox').innerHTML=matchTag(dev);
+  row.querySelector('.pctBarFg').style.background=cl.chosen;
+  row.querySelector('.resetRow').classList.toggle('hidden', !edited);
+}
+
+function renderShop(){
+  const map=new Map();
+  CLUSTERS.forEach(cl=>{
+    const can=nearestCan(labOf(cl.chosen)).can;
+    const key=can.b+'|'+can.n+'|'+can.h;
+    if(!map.has(key)) map.set(key,{p:can,pct:0});
+    map.get(key).pct+=cl.pct;
+  });
+  const list=[...map.values()].sort((a,b)=>b.pct-a.pct);
+  shopBox.innerHTML='';
+  list.forEach(({p,pct})=>{
+    const el=document.createElement('div');
+    el.className='can';
+    el.innerHTML=`<div class="sw" style="background:${p.h}"></div>
+      <div class="t"><b>${p.n}</b><small>${p.b}${p.c?' · '+p.c:''} · ${pct.toFixed(0)}%</small></div>`;
+    shopBox.appendChild(el);
+  });
+}
+
+/* =========================================================================
+   5) EVENTS
+   ========================================================================= */
+kRange.addEventListener('input', ()=>{ kVal.textContent=kRange.value; });
+kRange.addEventListener('change', ()=>{ if(lastAnalyzed) analyze(); });
+runBtn.addEventListener('click', analyze);
+brandsBox.addEventListener('change', ()=>{ if(lastAnalyzed) analyze(); });
+
+drop.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change', e=>loadFile(e.target.files[0]));
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+drop.addEventListener('drop', e=>{ if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+
+resetBtn.addEventListener('click', ()=>{
+  IMG=null; lastAnalyzed=false; runBtn.disabled=true; resetBtn.classList.add('hidden');
+  results.classList.add('hidden'); placeholder.classList.remove('hidden'); fileInput.value='';
+});
+
+dlBtn.addEventListener('click', ()=>{
+  const a=document.createElement('a');
+  a.download='vorschau-dosenfarben.png';
+  a.href=cvPrev.toDataURL('image/png');
+  a.click();
+});
+
+/* ---- Manuelle Farbbearbeitung über Popup ---- */
+const modal=$('modal'), canList=$('canList'), canSearch=$('canSearch'), canBrand=$('canBrand');
+let CURRENT_CI=-1;
+
+function setChosen(ci, hex){ if(ci<0 || !CLUSTERS[ci]) return; CLUSTERS[ci].chosen=hex; renderAll(); }
+
+// Hersteller ins Dropdown
+BRANDS.forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;canBrand.appendChild(o);});
+
+function openModal(ci){
+  if(!CLUSTERS[ci]) return;
+  CURRENT_CI=ci;
+  const cl=CLUSTERS[ci];
+  const oHex=rgbToHex(cl.rgb[0],cl.rgb[1],cl.rgb[2]);
+  $('mOrig').style.background=oHex; $('mOrigHex').textContent=oHex.toUpperCase();
+  const can=nearestCan(labOf(cl.chosen)).can;
+  $('mCur').style.background=cl.chosen; $('mCurTxt').textContent=`${can.n} (${cl.chosen.toUpperCase()})`;
+  canSearch.value=''; canBrand.value='';
+  renderCanList();
+  modal.classList.remove('hidden');
+  setTimeout(()=>canSearch.focus(), 30);
+}
+function closeModal(){ modal.classList.add('hidden'); CURRENT_CI=-1; }
+
+function renderCanList(){
+  if(CURRENT_CI<0) return;
+  const cl=CLUSTERS[CURRENT_CI];
+  const q=canSearch.value.trim().toLowerCase();
+  const brand=canBrand.value;
+  let list=PAINTS.filter(p=>(!brand||p.b===brand) && (!q || (p.n+' '+p.c+' '+p.b).toLowerCase().includes(q)));
+  list=list.map(p=>({p, d:deltaE(cl.lab, p.lab)})).sort((a,b)=>a.d-b.d);
+  const cur=cl.chosen.toLowerCase();
+  canList.innerHTML = list.length ? list.map(({p,d})=>`
+    <button class="canItem${p.h.toLowerCase()===cur?' sel':''}" data-hex="${p.h}">
+      <span class="sw" style="background:${p.h}"></span>
+      <span class="ci-meta"><b>${p.n}</b><small>${p.b}${p.c?' · '+p.c:''} · ${p.h.toUpperCase()}</small></span>
+      <span class="ci-d">ΔE ${d.toFixed(0)}</span>
+    </button>`).join('')
+    : '<div class="empty" style="padding:24px">Keine Farbe gefunden.</div>';
+}
+
+canSearch.addEventListener('input', renderCanList);
+canBrand.addEventListener('change', renderCanList);
+canList.addEventListener('click', e=>{
+  const it=e.target.closest('.canItem'); if(!it) return;
+  setChosen(CURRENT_CI, it.dataset.hex); closeModal();
+});
+$('modalClose').addEventListener('click', closeModal);
+$('modalReset').addEventListener('click', ()=>{ const ci=CURRENT_CI; if(ci>=0) setChosen(ci, CLUSTERS[ci].auto.h); closeModal(); });
+modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Escape') return;
+  if(!modal.classList.contains('hidden')){ closeModal(); return; }
+  if(!bigModal.classList.contains('hidden')){ closeBigPreview(); }
+});
+
+/* ---- Vollbild-Vorschau ---- */
+const bigModal=$('bigModal'), cvPrevBig=$('cvPrevBig'), expandBtn=$('expandBtn');
+let BIG_DISP={w:0,h:0};
+function openBigPreview(){
+  if(!IMG || !CLUSTERS.length) return;
+  const maxW=Math.max(320, window.innerWidth*0.96 - 8);
+  const maxH=Math.max(240, window.innerHeight*0.82);
+  let w=IMG.naturalWidth, h=IMG.naturalHeight;
+  const s=Math.min(maxW/w, maxH/h);
+  BIG_DISP={w:Math.max(1,Math.round(w*s)), h:Math.max(1,Math.round(h*s))};
+  cvPrevBig.width=BIG_DISP.w; cvPrevBig.height=BIG_DISP.h;
+  bigModal.classList.remove('hidden');
+  renderBigPreview();
+}
+function closeBigPreview(){ bigModal.classList.add('hidden'); }
+function renderBigPreview(){
+  if(bigModal.classList.contains('hidden') || !CLUSTERS.length || !IMG || !BIG_DISP.w) return;
+  const ctx=cvPrevBig.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(IMG,0,0,BIG_DISP.w,BIG_DISP.h);
+  const img=ctx.getImageData(0,0,BIG_DISP.w,BIG_DISP.h);
+  const d=img.data;
+  const centers=CLUSTERS.map(c=>c.centerLab);
+  const cols=CLUSTERS.map(c=>hexToRgb(c.chosen));
+  const cent=CLUSTERS.map(()=>[0,0,0]); // sumX, sumY, count
+  const W=BIG_DISP.w;
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<128) continue;
+    const p=i>>2;
+    const x=p%W, y=(p-x)/W;
+    const lab=rgbToLab(d[i],d[i+1],d[i+2]);
+    let best=0,bd=Infinity;
+    for(let c=0;c<centers.length;c++){const dd=deltaE(lab,centers[c]); if(dd<bd){bd=dd;best=c;}}
+    d[i]=cols[best][0]; d[i+1]=cols[best][1]; d[i+2]=cols[best][2];
+    cent[best][0]+=x; cent[best][1]+=y; cent[best][2]++;
+  }
+  ctx.putImageData(img,0,0);
+  // Wrap an Canvas-Größe anpassen
+  const wrap=$('bigWrap');
+  wrap.style.width=BIG_DISP.w+'px'; wrap.style.height=BIG_DISP.h+'px';
+  // Chips zeichnen
+  const layer=$('chipsLayer'); layer.innerHTML='';
+  let visible=0;
+  CLUSTERS.forEach((cl,i)=>{
+    const c=cent[i];
+    if(c[2]<10) return;
+    visible++;
+    // Position: gespeicherte (gezogene) Position oder Schwerpunkt
+    let cx, cy;
+    if(cl.chipPos){ cx=cl.chipPos.fx*BIG_DISP.w; cy=cl.chipPos.fy*BIG_DISP.h; }
+    else { cx=c[0]/c[2]; cy=c[1]/c[2]; }
+    const pct=cl.pct;
+    const size=Math.max(34, Math.min(96, 34 + Math.sqrt(pct)*6.5));
+    const rgb=hexToRgb(cl.chosen);
+    const lum=0.299*rgb[0]+0.587*rgb[1]+0.114*rgb[2];
+    const can=nearestCan(labOf(cl.chosen)).can;
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='chip'; chip.dataset.ci=i;
+    chip.style.left=cx+'px'; chip.style.top=cy+'px';
+    chip.style.width=size+'px'; chip.style.height=size+'px';
+    chip.style.background=cl.chosen;
+    chip.style.color = lum>150 ? '#10131a' : '#ffffff';
+    chip.title=`${can.b} · ${can.n} · ${pct.toFixed(1)}% — Klick zum Tauschen, Ziehen verschiebt`;
+    chip.textContent = (pct>=10 ? Math.round(pct) : pct.toFixed(1)) + '%';
+    layer.appendChild(chip);
+  });
+  $('bigCount').textContent = visible;
+}
+
+/* ---- Chips: Drag & Klick ---- */
+let _drag=null;
+$('chipsLayer').addEventListener('mousedown', e=>{
+  const chip=e.target.closest('.chip'); if(!chip) return;
+  e.preventDefault();
+  const wrap=$('bigWrap').getBoundingClientRect();
+  const cx=parseFloat(chip.style.left), cy=parseFloat(chip.style.top);
+  _drag={chip, ci:+chip.dataset.ci, sx:e.clientX, sy:e.clientY, startX:cx, startY:cy, wrap, moved:false};
+  chip.classList.add('dragging');
+});
+window.addEventListener('mousemove', e=>{
+  if(!_drag) return;
+  const dx=e.clientX-_drag.sx, dy=e.clientY-_drag.sy;
+  if(Math.abs(dx)>3 || Math.abs(dy)>3) _drag.moved=true;
+  if(_drag.moved){
+    const nx=Math.max(0, Math.min(_drag.wrap.width,  _drag.startX+dx));
+    const ny=Math.max(0, Math.min(_drag.wrap.height, _drag.startY+dy));
+    _drag.chip.style.left=nx+'px'; _drag.chip.style.top=ny+'px';
+  }
+});
+window.addEventListener('mouseup', e=>{
+  if(!_drag) return;
+  const {chip, ci, moved}=_drag;
+  chip.classList.remove('dragging');
+  if(moved){
+    // Position relativ speichern (überlebt Resize)
+    const nx=parseFloat(chip.style.left), ny=parseFloat(chip.style.top);
+    if(CLUSTERS[ci]) CLUSTERS[ci].chipPos={fx:nx/BIG_DISP.w, fy:ny/BIG_DISP.h};
+  } else {
+    openModal(ci); // reiner Klick → Tausch-Popup
+  }
+  _drag=null;
+});
+expandBtn.addEventListener('click', openBigPreview);
+$('bigClose').addEventListener('click', closeBigPreview);
+bigModal.addEventListener('click', e=>{ if(e.target===bigModal) closeBigPreview(); });
+// Klick im Großbild → Cluster bestimmen & Farb-Popup öffnen
+cvPrevBig.addEventListener('click', e=>{
+  if(!CLUSTERS.length) return;
+  const rect=cvPrevBig.getBoundingClientRect();
+  const xRel=(e.clientX-rect.left)/rect.width;
+  const yRel=(e.clientY-rect.top)/rect.height;
+  const cx=Math.max(0,Math.min(cvOrig.width-1,Math.round(xRel*cvOrig.width)));
+  const cy=Math.max(0,Math.min(cvOrig.height-1,Math.round(yRel*cvOrig.height)));
+  const p=cvOrig.getContext('2d',{willReadFrequently:true}).getImageData(cx,cy,1,1).data;
+  if(p[3]<128) return;
+  const lab=rgbToLab(p[0],p[1],p[2]);
+  let best=0,bd=Infinity;
+  CLUSTERS.forEach((cl,i)=>{const d=deltaE(lab,cl.centerLab); if(d<bd){bd=d;best=i;}});
+  openModal(best);
+});
+// Bei Fensterwechsel neu skalieren
+window.addEventListener('resize', ()=>{ if(!bigModal.classList.contains('hidden')) openBigPreview(); });
+
+// Liste: Farbquadrat öffnet Popup, ↺ setzt zurück
+rowsBox.addEventListener('click', e=>{
+  const reset=e.target.closest('.resetRow');
+  if(reset){ const ci=+reset.closest('.row').dataset.ci; setChosen(ci, CLUSTERS[ci].auto.h); return; }
+  const pick=e.target.closest('.pickBtn');
+  if(pick){ openModal(+pick.closest('.row').dataset.ci); }
+});
+
+// Alle zurücksetzen
+$('resetColors').addEventListener('click', ()=>{
+  if(!CLUSTERS.length) return;
+  CLUSTERS.forEach(cl=>cl.chosen=cl.auto.h);
+  renderAll();
+});
+
+// Klick ins Vorschaubild → Segment erkennen & Popup öffnen
+cvPrev.addEventListener('click', e=>{
+  if(!CLUSTERS.length) return;
+  const rect=cvPrev.getBoundingClientRect();
+  const x=Math.round((e.clientX-rect.left)/rect.width  * cvPrev.width);
+  const y=Math.round((e.clientY-rect.top )/rect.height * cvPrev.height);
+  const oc=cvOrig.getContext('2d',{willReadFrequently:true});
+  const cx=Math.max(0,Math.min(cvOrig.width-1,x)), cy=Math.max(0,Math.min(cvOrig.height-1,y));
+  const p=oc.getImageData(cx,cy,1,1).data;
+  if(p[3]<128) return;
+  const lab=rgbToLab(p[0],p[1],p[2]);
+  let best=0,bd=Infinity;
+  CLUSTERS.forEach((cl,i)=>{const d=deltaE(lab,cl.centerLab); if(d<bd){bd=d;best=i;}});
+  openModal(best);
+});
+</script>
+</body>
+</html>
