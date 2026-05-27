@@ -126,6 +126,44 @@ Beispielpixel im Eingabebild: `#E2231A` (knalliges Rot).
 
 ---
 
+## Wie die Hex-Werte der Datenbank entstehen
+
+Die in der Anwendung hinterlegten Hex-Werte sind keine spektrometrischen Messungen, sondern aus mehreren öffentlich zugänglichen Quellen kuratiert. Vier typische Wege:
+
+**Quelle 1 — Direkter Hex vom Hersteller.**
+Montana Cans, Montana Colors und teilweise Loop Colors veröffentlichen auf ihren Webseiten zu jeder Dose einen RGB- oder Hex-Wert. Beispiel: die Produktseite zu MTN 94 RV-1021 enthält den Wert direkt. Dieser wird unverändert übernommen.
+
+**Quelle 2 — Über RAL-Konvertierung.**
+Viele Dosen orientieren sich an RAL-Industriefarben (etwa `RV-7016` → RAL 7016). Für RAL existieren offiziell standardisierte sRGB-Konvertierungen, aus denen sich der Hex-Wert eindeutig ableiten lässt.
+
+**Quelle 3 — Auslesen aus Produktbildern.**
+Wenn der Hersteller nur einen visuellen Swatch ohne Zahlenwert zeigt, wird die Farbe per Color-Picker aus dem Bild ausgelesen. Diese Methode ist die unzuverlässigste, weil Produktfotos nicht farbkalibriert sind.
+
+**Quelle 4 — Manuelle Korrektur und Konsistenzprüfung.**
+Nach dem Sammeln wird der Datensatz quergeprüft: Passt der Farbname zum Hex, sind ähnlich klingende Töne zwischen Herstellern in einem plausiblen Verhältnis, sind offensichtliche Fehler vorhanden.
+
+### Warum ein Hex-Wert nie die exakte Realität trifft
+
+Selbst bei sorgfältiger Kuratierung bleiben grundsätzliche Unschärfen:
+
+| Faktor | Auswirkung |
+|---|---|
+| Monitor-Kalibrierung | Jeder Bildschirm zeigt denselben Hex-Wert leicht anders an. |
+| Nicht farbkalibrierte Herstellerfotos | Auch offizielle Produktbilder sind selten unter normierten Lichtbedingungen entstanden. |
+| Glanzgrad | Matte und glänzende Dose mit identischem Pigment haben denselben Hex, wirken aber sichtbar unterschiedlich. |
+| Untergrund-Effekt | Pigment auf weißer gegen schwarze Wand erscheint anders. Der Hex codiert nur die Reinfarbe. |
+| Chargenstreuung | Auch der Hersteller hat Pigment-Toleranzen — zwei Dosen derselben Sorte können messbar abweichen. |
+
+Eine wirklich präzise Datenbank würde spektrometrische Messungen echter Dosenmuster erfordern. Solche Daten werden von Herstellern nicht öffentlich bereitgestellt.
+
+### Konsequenz für die Anwendung
+
+Die Empfehlungen sind **fundierte Annäherungen, keine Garantie**. Bei einem ΔE-Wert unter 5 („Sehr gut") liegt die vorgeschlagene Dose visuell sicher in der richtigen Farbfamilie — die exakte Nuance vor Ort weicht erfahrungsgemäß um wenige Prozent ab. Bei ΔE-Werten über 12 („Annäherung") existiert im ausgewählten Hersteller-Sortiment schlicht keine passende Dose, und der Vorschlag ist nur ein Notnagel.
+
+Empfehlung für ernsthafte Projekte: vor dem Kauf einen Test-Spray auf weißem Papier anfertigen und unter realem Licht prüfen. Der Sprühfarben-Finder ersetzt diese Kontrolle nicht; er verkürzt nur die Vorauswahl von rund 1 250 Dosen auf eine Handvoll Kandidaten.
+
+---
+
 ## Grenzen des Verfahrens
 
 - **Verläufe** werden nicht als Verläufe erkannt. k-means arbeitet auf einer Punktwolke und ignoriert räumliche Zusammenhänge. Ein blauer Verlauf zu Lila wird in zwei separate Cluster aufgeteilt.
