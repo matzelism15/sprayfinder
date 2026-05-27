@@ -82,5 +82,7 @@ Keine Abhängigkeiten, kein Build, kein Server nötig.
 
 ## Lizenz
 
-Frei nutzbar für persönliche und kommerzielle Zwecke. Hersteller- und Farbnamen
-sind Marken der jeweiligen Eigentümer; sie werden hier nur zur Referenz genannt.
+Lizenz: siehe [`LICENSE`](LICENSE). Kommerzielle Nutzung nur nach Absprache.
+
+Hersteller- und Farbnamen sind Marken der jeweiligen Eigentümer; sie werden hier
+nur beschreibend zur Bezugnahme auf die Originalprodukte verwendet.
