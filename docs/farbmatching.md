@@ -10,6 +10,14 @@ Die Anwendung sucht in einem Bild die wichtigsten Farbgruppen, übersetzt jede d
 
 So einfach das klingt — jeder einzelne Schritt löst ein konkretes Problem.
 
+### Prozess-Übersicht
+
+Die Anwendung kombiniert zwei Stränge: links eine einmalig kuratierte Dosen-Datenbank, rechts die bei jedem Bild-Upload neu durchlaufene Verarbeitung. Beide treffen in der Matching-Stufe aufeinander.
+
+![Diagramm des Farbabgleich-Prozesses](farbmatching-prozess.svg)
+
+Die folgenden Abschnitte beschreiben jede Stufe im Detail.
+
 ---
 
 ## 1. Das Bild verkleinern
